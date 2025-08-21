@@ -4,20 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rapid Indexer - Real-Time API Tool</title>
-    <style>
+       <style>
         @import url('https://rsms.me/inter/inter.css');
         html { font-family: 'Inter', sans-serif; }
         body { background-color: #f3f4f6; color: #1f2937; margin: 0; padding: 1rem; }
         .page-container { max-width: 800px; margin: 2rem auto; }
         
+        /* Header */
         header { display: flex; align-items: center; justify-content: center; margin-bottom: 2rem; }
         header svg { color: #2563eb; width: 40px; height: 40px; }
         header h1 { font-size: 2rem; font-weight: 800; color: #111827; margin: 0 0 0 1rem; }
         
+        /* Main Panel Styles */
         .panel { background-color: #ffffff; padding: 2.5rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); border: 1px solid #e5e7eb; }
         .results-panel { margin-top: 2rem; }
         .panel h2 { text-align: center; font-size: 1.5rem; margin-top:0; color: #1f2937;}
 
+        /* Form Styles */
         label { display: block; margin-top: 1.5rem; margin-bottom: 0.5rem; font-weight: 600; color: #374151; }
         input[type="file"], textarea { width: 100%; padding: 12px; font-size: 1rem; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; }
         textarea { resize: vertical; min-height: 150px; }
@@ -26,90 +29,73 @@
         button:hover { background-color: #1d4ed8; }
         button:disabled { background-color: #9ca3af; cursor: not-allowed; }
 
+        /* Results Styles */
         .result { padding: 12px; margin-bottom: 8px; border-radius: 6px; border-left-width: 5px; border-left-style: solid; }
         .result-success { background-color: #f0fdf4; border-color: #22c55e; color: #15803d; }
         .result-error { background-color: #fef2f2; border-color: #ef4444; color: #b91c1c; }
         .result strong { font-family: 'Menlo', 'Consolas', monospace; display: block; word-wrap: break-word; }
-        /* --- NEW & IMPROVED MODAL (POPUP) STYLES --- */
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-    backdrop-filter: blur(4px); /* Adds a modern frosted glass effect */
-}
-.modal-box {
-    background: white;
-    padding: 2rem;
-    border-radius: 12px;
-    max-width: 420px; /* <--- REDUCED SIZE */
-    width: 90%; /* For mobile */
-    text-align: center;
-    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-    transform: translateY(-20px); /* Animate it in from the top */
-    transition: transform 0.2s ease-out;
-}
-.modal-overlay:target, .modal-overlay[style*="flex"] {
-    /* When the modal becomes visible, apply the transform */
-    transform: translateY(0);
-}
-.modal-box h2 {
-    margin-top: 0;
-    font-size: 1.25rem; /* <--- SMALLER TITLE */
-    color: #111827;
-}
-.modal-box p {
-    color: #4b5563;
-    font-size: 1rem; /* <--- SMALLER TEXT */
-    line-height: 1.5;
-    margin-bottom: 0;
-}
-.modal-box .button-group {
-    margin-top: 2rem; /* <--- MORE SPACE ABOVE BUTTONS */
-    display: flex;
-    gap: 0.75rem; /* <--- TIGHTER BUTTONS */
-}
-.modal-box button, .modal-box a.button {
-    flex: 1;
-    text-decoration: none;
-    display: inline-block;
-    padding: 10px 16px;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 0.95rem;
-    width: 100%; /* <--- THIS IS THE ONLY LINE YOU NEED TO ADD/CHANGE */
-}
-.modal-box button {
-    background-color: #f3f4f6;
-    color: #4b5563;
-    border: 1px solid #e5e7eb;
-}
-.modal-box button:hover {
-    background-color: #e5e7eb;
-}
-a.button.primary {
-    background-color: #2563eb;
-    color: white;
-    border: 1px solid transparent;
-}
-a.button.primary:hover {
-    background-color: #1d4ed8;
-}
-
+        .result p { margin: 5px 0 0; }
+        
+        /* --- FINAL & PERFECTED MODAL STYLES --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(17, 24, 39, 0.6); /* Slightly darker overlay */
+            display: none; justify-content: center; align-items: center;
+            z-index: 1000; backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px); /* For Safari compatibility */
+        }
+        .modal-box {
+            background: white; padding: 2rem; border-radius: 12px;
+            max-width: 420px; width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            border: 1px solid #e5e7eb;
+        }
+        .modal-box h2 {
+            margin-top: 0; font-size: 1.25rem; color: #111827;
+        }
+        .modal-box p {
+            color: #4b5563; font-size: 1rem; line-height: 1.5; margin: 1rem 0 0 0;
+        }
+        .modal-box .button-group {
+            margin-top: 1.75rem; display: flex; gap: 0.75rem;
+        }
+        .modal-box button, .modal-box a.button {
+            flex: 1 1 0; /* Ensures buttons grow and shrink equally from a base of 0 */
+            text-decoration: none; display: inline-block;
+            padding: 10px 16px; border-radius: 8px;
+            font-weight: 600; font-size: 0.95rem;
+            text-align: center;
+            transition: background-color 0.2s;
+            box-sizing: border-box; /* This is crucial for consistent sizing */
+        }
+        .modal-box button {
+            background-color: #ffffff; color: #374151;
+            border: 1px solid #d1d5db;
+        }
+        .modal-box button:hover {
+            background-color: #f9fafb;
+        }
+        a.button.primary {
+            background-color: #2563eb; color: white;
+            border: 1px solid transparent; /* The key to perfect size matching */
+        }
+        a.button.primary:hover {
+            background-color: #1d4ed8;
+        }
+        /* --- END OF MODAL STYLES --- */
+        
+        /* Footer */
         footer { text-align: center; margin-top: 2rem; color: #9ca3af; }
 
+        /* Mobile Responsive Styles */
         @media (max-width: 640px) {
             body { padding: 0.5rem; }
             .page-container { margin: 1rem auto; }
             .panel { padding: 1.5rem; }
             header h1 { font-size: 1.5rem; }
-            .modal-box { width: 90%; }
+            header svg { width: 32px; height: 32px; }
+            .modal-box { width: 90%; padding: 1.5rem;}
         }
     </style>
 </head>
