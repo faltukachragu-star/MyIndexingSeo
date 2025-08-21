@@ -3,195 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rapid Indexer - Real-Time API Tool</title>
+    <title>Tutorial: Getting Your API Key</title>
     <style>
+        /* This CSS is very similar to index.html for brand consistency */
         @import url('https://rsms.me/inter/inter.css');
         html { font-family: 'Inter', sans-serif; }
         body { background-color: #f3f4f6; color: #1f2937; margin: 0; padding: 1rem; }
         .page-container { max-width: 800px; margin: 2rem auto; }
-        
-        /* Header */
         header { display: flex; align-items: center; justify-content: center; margin-bottom: 2rem; }
         header svg { color: #2563eb; width: 40px; height: 40px; }
         header h1 { font-size: 2rem; font-weight: 800; color: #111827; margin: 0 0 0 1rem; }
-        
-        /* Main Panel Styles */
         .panel { background-color: #ffffff; padding: 2.5rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); border: 1px solid #e5e7eb; }
-        .results-panel { margin-top: 2rem; }
-        .panel h2 { text-align: center; font-size: 1.5rem; margin-top:0; color: #1f2937;}
-
-        /* Form Styles */
-        label { display: block; margin-top: 1.5rem; margin-bottom: 0.5rem; font-weight: 600; color: #374151; }
-        input[type="file"], textarea { width: 100%; padding: 12px; font-size: 1rem; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; }
-        textarea { resize: vertical; min-height: 150px; }
-        input[type="file"]:focus, textarea:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
-        button { background-color: #2563eb; color: white; padding: 14px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600; width: 100%; transition: background-color 0.2s; margin-top: 1.5rem; }
-        button:hover { background-color: #1d4ed8; }
-        button:disabled { background-color: #9ca3af; cursor: not-allowed; }
-
-        /* Results Styles */
-        .result { padding: 12px; margin-bottom: 8px; border-radius: 6px; border-left-width: 5px; border-left-style: solid; }
-        .result-success { background-color: #f0fdf4; border-color: #22c55e; color: #15803d; }
-        .result-error { background-color: #fef2f2; border-color: #ef4444; color: #b91c1c; }
-        .result strong { font-family: 'Menlo', 'Consolas', monospace; display: block; word-wrap: break-word; }
-
-        /* Modal (Popup) Styles */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: none; justify-content: center; align-items: center; z-index: 1000; }
-        .modal-box { background: white; padding: 2rem; border-radius: 12px; max-width: 500px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        .modal-box p { color: #4b5563; font-size: 1.1rem; }
-        .modal-box .button-group { margin-top: 1.5rem; display: flex; gap: 1rem; }
-        .modal-box button, .modal-box a.button { flex: 1; text-decoration: none; display:inline-block; padding: 12px 20px;}
-        a.button.primary { background-color: #16a34a; }
-        a.button.primary:hover { background-color: #15803d; }
-
-        /* Footer */
+        
+        /* Tutorial Specific Styles */
+        .step { margin-bottom: 2.5rem; }
+        .step-header { display: flex; align-items: flex-start; margin-bottom: 1rem; }
+        .step-number { background-color: #3b82f6; color: white; font-weight: 700; width: 36px; height: 36px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; flex-shrink: 0; }
+        .step-title { margin-left: 1rem; font-size: 1.4rem; font-weight: 600; color: #111827; margin-top: 0.2rem; }
+        p { line-height: 1.6; color: #4b5563; }
+        a { color: #2563eb; text-decoration: none; font-weight: 500; }
+        a:hover { text-decoration: underline; }
+        code { background-color: #eef2ff; color: #4338ca; padding: 0.2rem 0.5rem; border-radius: 6px; font-size: 0.9em; font-family: 'Menlo', 'Consolas', monospace; }
+        li { margin-bottom: 0.75rem; }
+        .highlight { background-color: #fffbeb; padding: 1rem; border-radius: 8px; border-left: 4px solid #facc15; margin: 1rem 0; }
+        .back-link { display: block; text-align: center; margin-top: 2rem; font-weight: 600; }
         footer { text-align: center; margin-top: 2rem; color: #9ca3af; }
-
-        /* Mobile Responsive Styles */
+        
+        /* Mobile Responsive */
         @media (max-width: 640px) {
             body { padding: 0.5rem; }
             .page-container { margin: 1rem auto; }
             .panel { padding: 1.5rem; }
             header h1 { font-size: 1.5rem; }
             header svg { width: 32px; height: 32px; }
-            .modal-box { width: 90%; }
+            .step-title { font-size: 1.2rem; }
         }
     </style>
 </head>
 <body>
-
 <div class="page-container">
     <header>
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>
         <h1>Rapid Indexer</h1>
     </header>
 
-    <div class="panel main-tool">
-        <form id="indexing-form">
-            <label for="service_account_file">1. Upload API Key</label>
-            <input type="file" id="service_account_file" accept=".json">
-            
-            <label for="url_file">2. Submit URLs (.txt or .xml)</label>
-            <input type="file" id="url_file" accept=".txt,.xml">
-            
-            <div style="text-align: center; margin: 1rem 0; color: #9ca3af;">OR</div>
-            <textarea id="urls_textarea" placeholder="Paste one URL per line here..."></textarea>
-            
-            <button type="submit" id="submit-button">Start Real-Time Indexing</button>
-        </form>
-    </div>
-    
-    <div class="panel results-panel" id="results-panel" style="display: none;">
-        <h2 id="results-title">Live Results</h2>
-        <div id="results-container"></div>
-    </div>
+    <div class="panel">
+        <h2 style="margin-top:0;">Complete API Setup Guide</h2>
 
-    <footer>
-        <p>A high-performance indexing tool.</p>
-    </footer>
-</div>
-
-<!-- API Key Missing Modal -->
-<div class="modal-overlay" id="api-key-modal">
-    <div class="modal-box">
-        <h2>API Key Required</h2>
-        <p>Please upload your Google Service Account JSON key to continue. If you don't have one, our tutorial will guide you through the setup.</p>
-        <div class="button-group">
-            <button onclick="document.getElementById('api-key-modal').style.display='none'">Got it</button>
-            <a href="/tutorial" target="_blank" class="button primary">View Tutorial</a>
+        <!-- Step 1 -->
+        <div class="step">
+            <div class="step-header">
+                <div class="step-number">1</div><h3 class="step-title">Create a Google Cloud Project</h3>
+            </div>
+            <ol>
+                <li>Go to the <a href="https://console.cloud.google.com/projectcreate" target="_blank">Google Cloud Platform Console</a>.</li>
+                <li>Give your project a name (e.g., "Website Indexing") and click <strong>Create</strong>.</li>
+            </ol>
         </div>
+
+        <!-- Step 2 -->
+        <div class="step">
+            <div class="step-header">
+                <div class="step-number">2</div><h3 class="step-title">Enable the Indexing API</h3>
+            </div>
+            <ol>
+                <li>Go to the <a href="https://console.cloud.google.com/apis/library/indexing.googleapis.com" target="_blank">Indexing API Page</a>.</li>
+                <li>Make sure your project is selected at the top, then click <strong>Enable</strong>.</li>
+            </ol>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="step">
+            <div class="step-header">
+                <div class="step-number">3</div><h3 class="step-title">Create a Service Account</h3>
+            </div>
+            <ol>
+                <li>Go to the <a href="https://console.cloud.google.com/iam-admin/serviceaccounts" target="_blank">Service Accounts page</a>.</li>
+                <li>Click <strong>+ Create Service Account</strong>. Give it a name, click <strong>Create and Continue</strong>.</li>
+                <li>For Role, select <strong>Owner</strong>. Click <strong>Continue</strong>, then <strong>Done</strong>.</li>
+            </ol>
+            <div class="highlight"><p><strong>Copy the new service account's email address.</strong> You need it next!</p></div>
+        </div>
+        
+        <!-- Step 4 -->
+        <div class="step">
+            <div class="step-header">
+                <div class="step-number">4</div><h3 class="step-title">Connect to Google Search Console</h3>
+            </div>
+            <ol>
+                <li>Go to your <a href="https://search.google.com/search-console" target="_blank">Google Search Console</a>.</li>
+                <li>Go to <strong>Settings &rarr; Users and permissions</strong>.</li>
+                <li>Click <strong>Add User</strong>, paste the service account email, and set Permission to <strong>Owner</strong>. Click <strong>Add</strong>.</li>
+            </ol>
+        </div>
+
+        <!-- Step 5 -->
+        <div class="step">
+            <div class="step-header">
+                <div class="step-number">5</div><h3 class="step-title">Download Your JSON Key</h3>
+            </div>
+            <ol>
+                <li>Go back to the <a href="https://console.cloud.google.com/iam-admin/serviceaccounts" target="_blank">Google Cloud Service Accounts page</a> and click on your new account.</li>
+                <li>Go to the <strong>KEYS</strong> tab, click <strong>Add Key &rarr; Create new key</strong>.</li>
+                <li>Choose <strong>JSON</strong> and click <strong>Create</strong>. A file will download. This is your API key.</li>
+            </ol>
+        </div>
+        <a href="/" class="back-link">← Back to the Tool</a>
     </div>
+
+    <footer><p>A high-performance indexing tool.</p></footer>
 </div>
-
-
-<script>
-    const form = document.getElementById('indexing-form');
-    const resultsPanel = document.getElementById('results-panel');
-    const resultsTitle = document.getElementById('results-title');
-    const resultsContainer = document.getElementById('results-container');
-    const submitButton = document.getElementById('submit-button');
-    const apiKeyModal = document.getElementById('api-key-modal');
-
-    function readFileAsText(file) {
-        // ... (this function is unchanged)
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = event => resolve(event.target.result);
-            reader.onerror = error => reject(error);
-            reader.readAsText(file);
-        });
-    }
-
-    form.addEventListener('submit', async (event) => {
-        event.preventDefault();
-
-        const credsFile = document.getElementById('service_account_file').files[0];
-        
-        // --- NEW FEATURE: API KEY CHECK ---
-        if (!credsFile) {
-            apiKeyModal.style.display = 'flex'; // Show the popup
-            return; // Stop the submission
-        }
-        
-        const urlsFile = document.getElementById('url_file').files[0];
-        const urlsText = document.getElementById('urls_textarea').value;
-
-        submitButton.disabled = true;
-        submitButton.textContent = 'Processing...';
-        resultsPanel.style.display = 'block';
-        resultsContainer.innerHTML = '';
-        resultsTitle.textContent = "Preparing submission...";
-
-        try {
-            const payload = {};
-            payload.credentials = JSON.parse(await readFileAsText(credsFile));
-            if (urlsFile) {
-                payload.urls_file = { filename: urlsFile.name, content: await readFileAsText(urlsFile) };
-            } else if (urlsText) {
-                payload.urls_text = urlsText;
-            } else {
-                throw new Error("No URLs provided. Please upload a file or paste URLs.");
-            }
-            
-            const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-            const ws = new WebSocket(`${wsProtocol}${window.location.host}/ws`);
-
-            ws.onopen = () => {
-                resultsTitle.textContent = `Live processing started...`;
-                ws.send(JSON.stringify(payload));
-            };
-
-            ws.onmessage = (event) => {
-                const result = JSON.parse(event.data);
-                if (result.type === 'result') {
-                    const resultDiv = document.createElement('div');
-                    resultDiv.classList.add('result');
-                    if (result.status === 'success') {
-                        resultDiv.classList.add('result-success');
-                        resultDiv.innerHTML = `<strong>${result.url}</strong><p>✅ SUCCESS</p>`;
-                    } else {
-                        resultDiv.classList.add('result-error');
-                        resultDiv.innerHTML = `<strong>${result.url}</strong><p>❌ FAILED: ${result.message}</p>`;
-                    }
-                    resultsContainer.appendChild(resultDiv);
-                } else if (result.type === 'done') {
-                    resultsTitle.textContent = `Processing Complete!`;
-                    submitButton.disabled = false;
-                    submitButton.textContent = 'Start Real-Time Indexing';
-                    ws.close();
-                } else if (result.type === 'critical_error') {
-                     throw new Error(`Server Error: ${result.message}`);
-                }
-            };
-            ws.onerror = () => { throw new Error("WebSocket connection failed."); };
-            
-        } catch (error) {
-            resultsTitle.textContent = 'Error';
-            resultsContainer.innerHTML = `<div class="result result-error"><p><strong>Error:</strong> ${error.message}</p></div>`;
-            submitButton.disabled = false;
-            submitButton.textContent = 'Start Real-Time Indexing';
-        }
-    });
-</script>
 </body>
 </html>
