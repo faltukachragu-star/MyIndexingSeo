@@ -30,21 +30,76 @@
         .result-success { background-color: #f0fdf4; border-color: #22c55e; color: #15803d; }
         .result-error { background-color: #fef2f2; border-color: #ef4444; color: #b91c1c; }
         .result strong { font-family: 'Menlo', 'Consolas', monospace; display: block; word-wrap: break-word; }
-
-        /* --- MODAL (POPUP) STYLES --- */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: none; /* Changed from display:flex */ justify-content: center; align-items: center; z-index: 1000; }
-        .modal-box { background: white; padding: 2rem; border-radius: 12px; max-width: 500px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        .modal-box h2 { margin-top: 0; }
-        .modal-box p { color: #4b5563; font-size: 1.1rem; line-height: 1.6; }
-        .modal-box .button-group { margin-top: 1.5rem; display: flex; gap: 1rem; }
-        /* Style BOTH the button and the 'a' tag to look the same for consistency */
-        .modal-box button, .modal-box a.button { flex: 1; text-decoration: none; display:inline-block; padding: 12px 20px; border-radius: 8px; font-weight: 600; }
-        /* Style for the secondary close button */
-        .modal-box button { background-color: #e5e7eb; color: #374151; border: 1px solid #d1d5db;}
-        .modal-box button:hover { background-color: #d1d5db; }
-        /* Style for the primary tutorial link */
-        a.button.primary { background-color: #16a34a; color: white; border: 1px solid transparent; }
-        a.button.primary:hover { background-color: #15803d; }
+        /* --- NEW & IMPROVED MODAL (POPUP) STYLES --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px); /* Adds a modern frosted glass effect */
+}
+.modal-box {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    max-width: 420px; /* <--- REDUCED SIZE */
+    width: 90%; /* For mobile */
+    text-align: center;
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    transform: translateY(-20px); /* Animate it in from the top */
+    transition: transform 0.2s ease-out;
+}
+.modal-overlay:target, .modal-overlay[style*="flex"] {
+    /* When the modal becomes visible, apply the transform */
+    transform: translateY(0);
+}
+.modal-box h2 {
+    margin-top: 0;
+    font-size: 1.25rem; /* <--- SMALLER TITLE */
+    color: #111827;
+}
+.modal-box p {
+    color: #4b5563;
+    font-size: 1rem; /* <--- SMALLER TEXT */
+    line-height: 1.5;
+    margin-bottom: 0;
+}
+.modal-box .button-group {
+    margin-top: 2rem; /* <--- MORE SPACE ABOVE BUTTONS */
+    display: flex;
+    gap: 0.75rem; /* <--- TIGHTER BUTTONS */
+}
+.modal-box button, .modal-box a.button {
+    flex: 1;
+    text-decoration: none;
+    display: inline-block;
+    padding: 10px 16px; /* <--- SMALLER BUTTONS */
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.95rem; /* <--- SMALLER FONT ON BUTTONS */
+}
+.modal-box button {
+    background-color: #f3f4f6;
+    color: #4b5563;
+    border: 1px solid #e5e7eb;
+}
+.modal-box button:hover {
+    background-color: #e5e7eb;
+}
+a.button.primary {
+    background-color: #2563eb;
+    color: white;
+    border: 1px solid transparent;
+}
+a.button.primary:hover {
+    background-color: #1d4ed8;
+}
 
         footer { text-align: center; margin-top: 2rem; color: #9ca3af; }
 
