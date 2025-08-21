@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tutorial: Getting Your Indexing API Key</title>
+    <style>
+        @import url('https://rsms.me/inter/inter.css');
+        html { font-family: 'Inter', sans-serif; }
+        body { background-color: #f8fafc; color: #1f2937; margin: 0; padding: 2rem 1rem; }
+        .container { max-width: 800px; margin: 0 auto; background-color: #ffffff; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;}
+        h1 { font-size: 2rem; text-align: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem; margin-bottom: 1.5rem;}
+        .wizard-step { margin-bottom: 2.5rem; }
+        .step-header { display: flex; align-items: center; margin-bottom: 1rem; }
+        .step-number { background-color: #3b82f6; color: white; font-weight: 700; width: 32px; height: 32px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.1rem; flex-shrink: 0; }
+        .step-title { margin-left: 1rem; font-size: 1.4rem; font-weight: 600; color: #111827; }
+        p { line-height: 1.6; color: #4b5563; }
+        a { color: #3b82f6; text-decoration: none; font-weight: 500; }
+        a:hover { text-decoration: underline; }
+        code { background-color: #eef2ff; color: #4338ca; padding: 0.2rem 0.5rem; border-radius: 6px; font-family: 'Menlo', 'Consolas', monospace; }
+        li { margin-bottom: 0.75rem; }
+        .highlight { background-color: #fffbeb; padding: 1rem; border-radius: 8px; border: 1px solid #fde68a; margin: 1rem 0; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Complete API Setup Guide</h1>
+
+    <!-- Step 1: Google Cloud Project -->
+    <div class="wizard-step">
+        <div class="step-header">
+            <div class="step-number">1</div>
+            <h2 class="step-title">Create a Google Cloud Project</h2>
+        </div>
+        <ol>
+            <li>Go to the <a href="https://console.cloud.google.com/projectcreate" target="_blank">Google Cloud Platform Console</a>.</li>
+            <li>Give your project a name (e.g., "Website Indexing") and click <strong>Create</strong>.</li>
+        </ol>
+    </div>
+
+    <!-- Step 2: Enable the API -->
+    <div class="wizard-step">
+        <div class="step-header">
+            <div class="step-number">2</div>
+            <h2 class="step-title">Enable the Indexing API</h2>
+        </div>
+        <ol>
+            <li>Go to the <a href="https://console.cloud.google.com/apis/library/indexing.googleapis.com" target="_blank">Indexing API Page</a> (make sure your project is selected).</li>
+            <li>Click the blue <strong>Enable</strong> button.</li>
+        </ol>
+    </div>
+
+    <!-- Step 3: Create Service Account -->
+    <div class="wizard-step">
+        <div class="step-header">
+            <div class="step-number">3</div>
+            <h2 class="step-title">Create a Service Account</h2>
+        </div>
+        <ol>
+            <li>Go to the <a href="https://console.cloud.google.com/iam-admin/serviceaccounts" target="_blank">Service Accounts page</a>.</li>
+            <li>Click <strong>+ Create Service Account</strong>.</li>
+            <li>Give it a name (e.g., "indexing-service-bot") and click <strong>Create and Continue</strong>.</li>
+            <li>For Role, select <strong>Owner</strong>. Click <strong>Continue</strong>, then click <strong>Done</strong>.</li>
+            <div class="highlight">
+                <p><strong>Copy the new service account's email address.</strong> You will need it in the next step. It looks like: <code>name@project-id.iam.gserviceaccount.com</code>.</p>
+            </div>
+        </ol>
+    </div>
+
+    <!-- Step 4: Grant Access in Search Console -->
+    <div class="wizard-step">
+        <div class="step-header">
+            <div class="step-number">4</div>
+            <h2 class="step-title">Connect to Google Search Console</h2>
+        </div>
+        <p>This is the most important step. You must tell Search Console that your new Service Account is an owner of your website.</p>
+        <ol>
+            <li>Go to your <a href="https://search.google.com/search-console" target="_blank">Google Search Console</a> and select your website.</li>
+            <li>Go to <strong>Settings &rarr; Users and permissions</strong>.</li>
+            <li>Click the blue <strong>Add User</strong> button.</li>
+            <li>In the "Email address" field, <strong>paste the service account email</strong> you copied in Step 3.</li>
+            <li>Set the Permission to <strong>Owner</strong>. Click <strong>Add</strong>.</li>
+        </ol>
+    </div>
+
+    <!-- Step 5: Get Your JSON Key -->
+    <div class="wizard-step">
+        <div class="step-header">
+            <div class="step-number">5</div>
+            <h2 class="step-title">Download Your JSON Private Key</h2>
+        </div>
+        <ol>
+            <li>Go back to the <a href="https://console.cloud.google.com/iam-admin/serviceaccounts" target="_blank">Google Cloud Service Accounts page</a>.</li>
+            <li>Click on the service account you created.</li>
+            <li>Go to the <strong>KEYS</strong> tab, click <strong>Add Key</strong> &rarr; <strong>Create new key</strong>.</li>
+            <li>Choose <strong>JSON</strong> and click <strong>Create</strong>. A file will download. This is your API key!</li>
+        </ol>
+    </div>
+    <p style="text-align:center; font-weight: 600;">You now have everything you need. Go back to the tool and upload this key file to begin indexing.</p>
+</div>
+</body>
+</html>
