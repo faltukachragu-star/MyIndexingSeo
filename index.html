@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Indexing API Tool</title>
+    <!-- CSS is unchanged, so keeping it for brevity -->
+    <style>
+        @import url('https://rsms.me/inter/inter.css');
+        html { font-family: 'Inter', sans-serif; }
+        body { background-color: #f8fafc; color: #1f2937; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 2rem 1rem; }
+        .container { max-width: 800px; width: 100%; }
+        .main-tool, .results-panel { background-color: #ffffff; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+        .results-panel { margin-top: 2rem; }
+        h1 { font-size: 2.25rem; font-weight: 700; color: #111827; text-align: center; margin:0 0 1rem; }
+        h2 { text-align: center; }
+        label { display: block; margin-top: 1.5rem; margin-bottom: 0.5rem; font-weight: 600; color: #374151; }
+        .label-note { font-weight: 400; color: #6b7280; margin-left: 0.5rem; }
+        input[type="file"], textarea { width: 100%; padding: 12px; font-size: 1rem; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; }
+        textarea { resize: vertical; min-height: 150px; }
+        button { background-color: #3b82f6; color: white; padding: 14px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600; width: 100%; transition: background-color 0.3s; margin-top: 1.5rem; }
+        button:hover { background-color: #2563eb; }
+        button:disabled { background-color: #9ca3af; cursor: not-allowed; }
+        .result { padding: 12px; margin-bottom: 8px; border-radius: 6px; border-left-width: 5px; border-left-style: solid; }
+        .result-success { background-color: #f0fdf4; border-color: #22c55e; color: #15803d; }
+        .result-error { background-color: #fef2f2; border-color: #ef4444; color: #b91c1c; }
+        .result strong { font-family: 'Menlo', 'Consolas', monospace; display: block; word-wrap: break-word; }
+        .result p { margin: 5px 0 0; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="main-tool">
+        <h1>Real-Time Indexing Tool</h1>
+        <form id="indexing-form">
+            <label for="service_account_file">1. Upload API Key <a href="/tutorial" target="_blank" class="label-note">How?</a></label>
+            <input type="file" id="service_account_file" accept=".json" required>
+            <label for="url_file">2. Submit URLs <span class="label-note">(via .txt or sitemap.xml)</span></label>
+            <input type="file" id="url_file" accept=".txt,.xml">
+            <div style="text-align: center; margin: 1.5rem 0; color: #9ca3af; font-weight: 500;">OR</div>
+            <textarea id="urls_textarea" placeholder="Paste one URL per line here..."></textarea>
+            <button type="submit" id="submit-button">Start Real-Time Indexing</button>
+        </form>
+    </div>
+    <div class="results-panel" id="results-panel" style="display: none;">
+        <h2 id="results-title">Live Results</h2>
+        <div id="results-container"></div>
+    </div>
+</div>
+
+<script>
+    const form = document.getElementById('indexing-form');
+    const resultsPanel = document.getElementById('results-panel');
+    const resultsTitle = document.getElementById('results-title');
+    const resultsContainer = document.getElementById('results-container');
+    const submitButton = document.getElementById('submit-button');
+
+    function readFileAsText(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = event => resolve(event.target.result);
+            reader.onerror = error => reject(error);
+            reader.readAsText(file);
+        });
+    }
+
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const credsFile = document.getElementById('service_account_file').files[0];
+        const urlsFile = document.getElementById('url_file').files[0];
+        const urlsText = document.getElementById('urls_textarea').value;
+
+        if (!credsFile) { alert("Please select your API Key JSON file."); return; }
+
+        submitButton.disabled = true;
+        submitButton.textContent = 'Processing...';
+        resultsPanel.style.display = 'block';
+        resultsContainer.innerHTML = '';
+        resultsTitle.textContent = "Preparing submission...";
+
+        try {
+            const payload = {};
+            payload.credentials = JSON.parse(await readFileAsText(credsFile));
+            
+            if (urlsFile) {
+                payload.urls_file = {
+                    filename: urlsFile.name,
+                    content: await readFileAsText(urlsFile)
+                };
+            } else if (urlsText) {
+                payload.urls_text = urlsText;
+
+            } else {
+                 throw new Error("No URLs provided. Please upload a file or paste URLs.");
+            }
+            
+            const ws = new WebSocket(`ws://${window.location.host}/ws`);
+
+            ws.onopen = () => {
+                resultsTitle.textContent = `Live processing started...`;
+                ws.send(JSON.stringify(payload));
+            };
+
+            ws.onmessage = (event) => {
+                const result = JSON.parse(event.data);
+                if (result.type === 'result') {
+                    const resultDiv = document.createElement('div');
+                    resultDiv.classList.add('result');
+                    if (result.status === 'success') {
+                        resultDiv.classList.add('result-success');
+                        resultDiv.innerHTML = `<strong>${result.url}</strong><p>✅ SUCCESS</p>`;
+                    } else {
+                        resultDiv.classList.add('result-error');
+                        resultDiv.innerHTML = `<strong>${result.url}</strong><p>❌ FAILED: ${result.message}</p>`;
+                    }
+                    resultsContainer.appendChild(resultDiv);
+                } else if (result.type === 'done') {
+                    resultsTitle.textContent = `Processing Complete!`;
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Start Real-Time Indexing';
+                    ws.close();
+                } else if (result.type === 'critical_error') {
+                     throw new Error(`Server Error: ${result.message}`);
+                }
+            };
+            ws.onerror = () => { throw new Error("WebSocket connection failed."); };
+            
+        } catch (error) {
+            resultsTitle.textContent = 'Error';
+            resultsContainer.innerHTML = `<div class="result result-error"><p><strong>Error:</strong> ${error.message}</p></div>`;
+            submitButton.disabled = false;
+            submitButton.textContent = 'Start Real-Time Indexing';
+        }
+    });
+</script>
+</body>
+</html>
