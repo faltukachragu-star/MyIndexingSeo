@@ -95,8 +95,13 @@
                  throw new Error("No URLs provided. Please upload a file or paste URLs.");
             }
             
-            const ws = new WebSocket(`ws://${window.location.host}/ws`);
-
+            // ### THE FINAL, DEFINITIVE FIX IS HERE ###
+            // This line intelligently chooses the correct protocol.
+            // If the page is on HTTPS, it uses "wss://". Otherwise, it uses "ws://".
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+            const ws = new WebSocket(`${wsProtocol}${window.location.host}/ws`);
+            
+            // The rest of the logic is unchanged
             ws.onopen = () => {
                 resultsTitle.textContent = `Live processing started...`;
                 ws.send(JSON.stringify(payload));
