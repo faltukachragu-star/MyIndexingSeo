@@ -12,3 +12,6 @@ google-auth==2.30.0
 
 # Required by FastAPI for handling file uploads from HTML forms
 python-multipart==0.0.9
+
+# A 'secret' dependency needed by the google-auth library for token refreshing
+requests==2.32.3
