@@ -3,50 +3,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Indexing API Tool</title>
-    <!-- CSS is unchanged, so keeping it for brevity -->
+    <title>Rapid Indexer - Real-Time API Tool</title>
     <style>
         @import url('https://rsms.me/inter/inter.css');
         html { font-family: 'Inter', sans-serif; }
-        body { background-color: #f8fafc; color: #1f2937; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 2rem 1rem; }
-        .container { max-width: 800px; width: 100%; }
-        .main-tool, .results-panel { background-color: #ffffff; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+        body { background-color: #f3f4f6; color: #1f2937; margin: 0; padding: 1rem; }
+        .page-container { max-width: 800px; margin: 2rem auto; }
+        
+        /* Header */
+        header { display: flex; align-items: center; justify-content: center; margin-bottom: 2rem; }
+        header svg { color: #2563eb; width: 40px; height: 40px; }
+        header h1 { font-size: 2rem; font-weight: 800; color: #111827; margin: 0 0 0 1rem; }
+        
+        /* Main Panel Styles */
+        .panel { background-color: #ffffff; padding: 2.5rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); border: 1px solid #e5e7eb; }
         .results-panel { margin-top: 2rem; }
-        h1 { font-size: 2.25rem; font-weight: 700; color: #111827; text-align: center; margin:0 0 1rem; }
-        h2 { text-align: center; }
+        .panel h2 { text-align: center; font-size: 1.5rem; margin-top:0; color: #1f2937;}
+
+        /* Form Styles */
         label { display: block; margin-top: 1.5rem; margin-bottom: 0.5rem; font-weight: 600; color: #374151; }
-        .label-note { font-weight: 400; color: #6b7280; margin-left: 0.5rem; }
         input[type="file"], textarea { width: 100%; padding: 12px; font-size: 1rem; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; }
         textarea { resize: vertical; min-height: 150px; }
-        button { background-color: #3b82f6; color: white; padding: 14px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600; width: 100%; transition: background-color 0.3s; margin-top: 1.5rem; }
-        button:hover { background-color: #2563eb; }
+        input[type="file"]:focus, textarea:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
+        button { background-color: #2563eb; color: white; padding: 14px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600; width: 100%; transition: background-color 0.2s; margin-top: 1.5rem; }
+        button:hover { background-color: #1d4ed8; }
         button:disabled { background-color: #9ca3af; cursor: not-allowed; }
+
+        /* Results Styles */
         .result { padding: 12px; margin-bottom: 8px; border-radius: 6px; border-left-width: 5px; border-left-style: solid; }
         .result-success { background-color: #f0fdf4; border-color: #22c55e; color: #15803d; }
         .result-error { background-color: #fef2f2; border-color: #ef4444; color: #b91c1c; }
         .result strong { font-family: 'Menlo', 'Consolas', monospace; display: block; word-wrap: break-word; }
-        .result p { margin: 5px 0 0; }
+
+        /* Modal (Popup) Styles */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-box { background: white; padding: 2rem; border-radius: 12px; max-width: 500px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .modal-box p { color: #4b5563; font-size: 1.1rem; }
+        .modal-box .button-group { margin-top: 1.5rem; display: flex; gap: 1rem; }
+        .modal-box button, .modal-box a.button { flex: 1; text-decoration: none; display:inline-block; padding: 12px 20px;}
+        a.button.primary { background-color: #16a34a; }
+        a.button.primary:hover { background-color: #15803d; }
+
+        /* Footer */
+        footer { text-align: center; margin-top: 2rem; color: #9ca3af; }
+
+        /* Mobile Responsive Styles */
+        @media (max-width: 640px) {
+            body { padding: 0.5rem; }
+            .page-container { margin: 1rem auto; }
+            .panel { padding: 1.5rem; }
+            header h1 { font-size: 1.5rem; }
+            header svg { width: 32px; height: 32px; }
+            .modal-box { width: 90%; }
+        }
     </style>
 </head>
 <body>
-<div class="container">
-    <div class="main-tool">
-        <h1>Real-Time Indexing Tool</h1>
+
+<div class="page-container">
+    <header>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>
+        <h1>Rapid Indexer</h1>
+    </header>
+
+    <div class="panel main-tool">
         <form id="indexing-form">
-            <label for="service_account_file">1. Upload API Key <a href="/tutorial" target="_blank" class="label-note">How?</a></label>
-            <input type="file" id="service_account_file" accept=".json" required>
-            <label for="url_file">2. Submit URLs <span class="label-note">(via .txt or sitemap.xml)</span></label>
+            <label for="service_account_file">1. Upload API Key</label>
+            <input type="file" id="service_account_file" accept=".json">
+            
+            <label for="url_file">2. Submit URLs (.txt or .xml)</label>
             <input type="file" id="url_file" accept=".txt,.xml">
-            <div style="text-align: center; margin: 1.5rem 0; color: #9ca3af; font-weight: 500;">OR</div>
+            
+            <div style="text-align: center; margin: 1rem 0; color: #9ca3af;">OR</div>
             <textarea id="urls_textarea" placeholder="Paste one URL per line here..."></textarea>
+            
             <button type="submit" id="submit-button">Start Real-Time Indexing</button>
         </form>
     </div>
-    <div class="results-panel" id="results-panel" style="display: none;">
+    
+    <div class="panel results-panel" id="results-panel" style="display: none;">
         <h2 id="results-title">Live Results</h2>
         <div id="results-container"></div>
     </div>
+
+    <footer>
+        <p>A high-performance indexing tool.</p>
+    </footer>
 </div>
+
+<!-- API Key Missing Modal -->
+<div class="modal-overlay" id="api-key-modal">
+    <div class="modal-box">
+        <h2>API Key Required</h2>
+        <p>Please upload your Google Service Account JSON key to continue. If you don't have one, our tutorial will guide you through the setup.</p>
+        <div class="button-group">
+            <button onclick="document.getElementById('api-key-modal').style.display='none'">Got it</button>
+            <a href="/tutorial" target="_blank" class="button primary">View Tutorial</a>
+        </div>
+    </div>
+</div>
+
 
 <script>
     const form = document.getElementById('indexing-form');
@@ -54,8 +110,10 @@
     const resultsTitle = document.getElementById('results-title');
     const resultsContainer = document.getElementById('results-container');
     const submitButton = document.getElementById('submit-button');
+    const apiKeyModal = document.getElementById('api-key-modal');
 
     function readFileAsText(file) {
+        // ... (this function is unchanged)
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = event => resolve(event.target.result);
@@ -68,10 +126,15 @@
         event.preventDefault();
 
         const credsFile = document.getElementById('service_account_file').files[0];
+        
+        // --- NEW FEATURE: API KEY CHECK ---
+        if (!credsFile) {
+            apiKeyModal.style.display = 'flex'; // Show the popup
+            return; // Stop the submission
+        }
+        
         const urlsFile = document.getElementById('url_file').files[0];
         const urlsText = document.getElementById('urls_textarea').value;
-
-        if (!credsFile) { alert("Please select your API Key JSON file."); return; }
 
         submitButton.disabled = true;
         submitButton.textContent = 'Processing...';
@@ -82,26 +145,17 @@
         try {
             const payload = {};
             payload.credentials = JSON.parse(await readFileAsText(credsFile));
-            
             if (urlsFile) {
-                payload.urls_file = {
-                    filename: urlsFile.name,
-                    content: await readFileAsText(urlsFile)
-                };
+                payload.urls_file = { filename: urlsFile.name, content: await readFileAsText(urlsFile) };
             } else if (urlsText) {
                 payload.urls_text = urlsText;
-
             } else {
-                 throw new Error("No URLs provided. Please upload a file or paste URLs.");
+                throw new Error("No URLs provided. Please upload a file or paste URLs.");
             }
             
-            // ### THE FINAL, DEFINITIVE FIX IS HERE ###
-            // This line intelligently chooses the correct protocol.
-            // If the page is on HTTPS, it uses "wss://". Otherwise, it uses "ws://".
             const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
             const ws = new WebSocket(`${wsProtocol}${window.location.host}/ws`);
-            
-            // The rest of the logic is unchanged
+
             ws.onopen = () => {
                 resultsTitle.textContent = `Live processing started...`;
                 ws.send(JSON.stringify(payload));
