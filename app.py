@@ -32,6 +32,7 @@ CONCURRENT_REQUEST_LIMIT = 25
 REQUEST_TIMEOUT_SECONDS = 30
 API_ENDPOINT = "https://indexing.googleapis.com/v3/urlNotifications:publish"
 SCOPES = [
+    "openid",
     "https://www.googleapis.com/auth/indexing",
     "https://www.googleapis.com/auth/userinfo.profile",
     "https://www.googleapis.com/auth/userinfo.email"
