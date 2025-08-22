@@ -1,40 +1,6 @@
-# Core FastAPI web framework and its server
-fastapi==0.111.0
-uvicorn==0.30.1
-starlette==0.37.2
-
-# High-performance async HTTP client
-aiohttp==3.9.5
-
-# For Google Authentication - and its 'hidden' dependency
-google-auth==2.30.0
-requests==2.32.3
-
-# Required by FastAPI for form data
-python-multipart==0.0.9
-
-# Dependencies of google-auth
-cachetools==5.3.3
-pyasn1-modules==0.4.0
-rsa==4.9
-
-# Dependencies of aiohttp
-aiosignal==1.3.1
-attrs==23.2.0
-frozenlist==1.4.1
-multidict==6.0.5
-yarl==1.9.4
-
-# Dependencies of starlette and fastapi
-anyio==4.4.0
-pydantic==2.8.2
-pydantic-core==2.20.1
-
-# Other underlying dependencies that are critical
-annotated-types==0.7.0
-certifi==2024.7.4
-charset-normalizer==3.3.2
-idna==3.7
-sniffio==1.3.1
-typing-extensions==4.12.2
-urllib3==2.2.2
+fastapi
+uvicorn
+python-multipart
+aiohttp
+google-auth-oauthlib
+itsdangerous
