@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notificrawl- A Crawl Requester</title>
+    <title>Notificrawl - Real-Time Indexing API Tool</title>
     <style>
-        /* All CSS from your original file is fine here. No changes needed. */
         @import url('https://rsms.me/inter/inter.css');
         html { font-family: 'Inter', sans-serif; }
         body { background-color: #f3f4f6; color: #1f2937; margin: 0; padding: 1rem; }
@@ -31,7 +30,8 @@
         .user-status { background-color: #eef2ff; color: #4338ca; padding: 1rem; border-radius: 8px; text-align: center; margin-bottom: 2rem; }
         .user-status p { margin: 0; }
         .user-status a { color: #4338ca; font-weight: 600; margin-left: 1rem; }
-        footer { text-align: center; margin-top: 2rem; color: #9ca3af; }
+        footer { text-align: center; margin-top: 2rem; color: #9ca3af; font-size: 0.9rem; }
+        footer a { color: #6b7280; margin: 0 0.5rem; }
     </style>
 </head>
 <body>
@@ -39,15 +39,13 @@
 <div class="page-container">
     <header>
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>
-        <h1>Rapid Indexer</h1>
+        <h1>Notificrawl</h1>
     </header>
 
-    <!-- NEW: Authentication Status Panel -->
     <div id="auth-container">
         <!-- This will be populated by JavaScript -->
     </div>
 
-    <!-- The main tool is now hidden by default until login -->
     <div class="panel main-tool" id="main-tool" style="display: none;">
         <form id="indexing-form">
             <label for="url_file">Submit URLs (.txt or .xml)</label>
@@ -56,7 +54,7 @@
             <div style="text-align: center; margin: 1rem 0; color: #9ca3af;">OR</div>
             <textarea id="urls_textarea" placeholder="Paste one URL per line here..."></textarea>
             
-            <button type="submit" id="submit-button">Start Real-Time Indexing</button>
+            <button type="submit" id="submit-button">Start Indexing Request</button>
         </form>
     </div>
     
@@ -65,7 +63,10 @@
     </div>
 
     <footer>
-        <p>A high-performance indexing tool. <a href="/tutorial">Setup Guide</a></p>
+        <p>A high-performance indexing notification tool.</p>
+        <p>
+            <a href="/privacy">Privacy Policy</a> &bull; <a href="/terms">Terms of Service</a>
+        </p>
     </footer>
 </div>
 
@@ -77,7 +78,6 @@
         const resultsPanel = document.getElementById('results-panel');
         const submitButton = document.getElementById('submit-button');
 
-        // Check login status on page load
         try {
             const response = await fetch('/status');
             const data = await response.json();
@@ -109,10 +109,6 @@
 
         form.addEventListener('submit', async (event) => {
             event.preventDefault();
-
-            // The old modal for API key is no longer needed.
-            // Authentication is now handled by the server session.
-            
             const urlsFile = document.getElementById('url_file').files[0];
             const urlsText = document.getElementById('urls_textarea').value;
             submitButton.disabled = true;
@@ -123,8 +119,6 @@
             const resultsContainer = document.getElementById('results-container');
             
             try {
-                // The payload no longer sends credentials.
-                // The server knows who we are from the session cookie.
                 const payload = {};
                 if (urlsFile) {
                     payload.urls_file = { filename: urlsFile.name, content: await urlsFile.text() };
@@ -137,10 +131,7 @@
                 const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
                 const ws = new WebSocket(`${wsProtocol}${window.location.host}/ws`);
                 
-                ws.onopen = () => { 
-                    resultsTitle.textContent = `Live processing started...`; 
-                    ws.send(JSON.stringify(payload)); 
-                };
+                ws.onopen = () => { ws.send(JSON.stringify(payload)); };
                 
                 ws.onmessage = (event) => {
                     const result = JSON.parse(event.data);
@@ -158,7 +149,7 @@
                     } else if (result.type === 'done') {
                         resultsTitle.textContent = `Processing Complete!`;
                         submitButton.disabled = false;
-                        submitButton.textContent = 'Start Real-Time Indexing';
+                        submitButton.textContent = 'Start Indexing Request';
                         ws.close();
                     } else if (result.type === 'critical_error') { 
                         throw new Error(`Server Error: ${result.message}`); 
@@ -170,10 +161,10 @@
                 resultsTitle.textContent = 'Error';
                 const errorDiv = document.createElement('div');
                 errorDiv.classList.add('result', 'result-error');
-                errorDiv.innerHTML = `<p><strong>Error:</strong> ${error.message}</p>`;
+                errorDiv.innerHTML = `<p><strong>Error:</strong> ${error.message}`;
                 resultsContainer.appendChild(errorDiv);
                 submitButton.disabled = false;
-                submitButton.textContent = 'Start Real-Time Indexing';
+                submitButton.textContent = 'Start Indexing Request';
             }
         });
     });
