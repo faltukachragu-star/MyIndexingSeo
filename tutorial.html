@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tutorial: Getting Your API Key</title>
+    <title>Tutorial: Getting Your API Credentials</title>
     <style>
         /* This CSS is very similar to index.html for brand consistency */
         @import url('https://rsms.me/inter/inter.css');
@@ -14,8 +14,6 @@
         header svg { color: #2563eb; width: 40px; height: 40px; }
         header h1 { font-size: 2rem; font-weight: 800; color: #111827; margin: 0 0 0 1rem; }
         .panel { background-color: #ffffff; padding: 2.5rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); border: 1px solid #e5e7eb; }
-        
-        /* Tutorial Specific Styles */
         .step { margin-bottom: 2.5rem; }
         .step-header { display: flex; align-items: flex-start; margin-bottom: 1rem; }
         .step-number { background-color: #3b82f6; color: white; font-weight: 700; width: 36px; height: 36px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; flex-shrink: 0; }
@@ -27,17 +25,6 @@
         li { margin-bottom: 0.75rem; }
         .highlight { background-color: #fffbeb; padding: 1rem; border-radius: 8px; border-left: 4px solid #facc15; margin: 1rem 0; }
         .back-link { display: block; text-align: center; margin-top: 2rem; font-weight: 600; }
-        footer { text-align: center; margin-top: 2rem; color: #9ca3af; }
-        
-        /* Mobile Responsive */
-        @media (max-width: 640px) {
-            body { padding: 0.5rem; }
-            .page-container { margin: 1rem auto; }
-            .panel { padding: 1.5rem; }
-            header h1 { font-size: 1.5rem; }
-            header svg { width: 32px; height: 32px; }
-            .step-title { font-size: 1.2rem; }
-        }
     </style>
 </head>
 <body>
@@ -48,66 +35,66 @@
     </header>
 
     <div class="panel">
-        <h2 style="margin-top:0;">Complete API Setup Guide</h2>
-
+        <h2 style="margin-top:0;">OAuth 2.0 Setup Guide for the Tool Admin</h2>
+        <p>This guide is for the person running the Rapid Indexer tool. You need to create Google API credentials so that users can sign in and use the tool with their own accounts.</p>
+        
         <!-- Step 1 -->
         <div class="step">
             <div class="step-header">
-                <div class="step-number">1</div><h3 class="step-title">Create a Google Cloud Project</h3>
+                <div class="step-number">1</div><h3 class="step-title">Go to Google Cloud Credentials</h3>
             </div>
             <ol>
-                <li>Go to the <a href="https://console.cloud.google.com/projectcreate" target="_blank">Google Cloud Platform Console</a>.</li>
-                <li>Give your project a name (e.g., "Website Indexing") and click <strong>Create</strong>.</li>
+                <li>Go to the <a href="https://console.cloud.google.com/apis/credentials" target="_blank">Google Cloud Platform Credentials page</a>.</li>
+                <li>Create a project if you don't have one, or select an existing one.</li>
+                <li>Click <strong>+ CREATE CREDENTIALS</strong> and select <strong>OAuth client ID</strong>.</li>
             </ol>
         </div>
 
         <!-- Step 2 -->
         <div class="step">
             <div class="step-header">
-                <div class="step-number">2</div><h3 class="step-title">Enable the Indexing API</h3>
+                <div class="step-number">2</div><h3 class="step-title">Configure Consent Screen</h3>
             </div>
+            <p>If prompted, you must configure your consent screen first.</p>
             <ol>
-                <li>Go to the <a href="https://console.cloud.google.com/apis/library/indexing.googleapis.com" target="_blank">Indexing API Page</a>.</li>
-                <li>Make sure your project is selected at the top, then click <strong>Enable</strong>.</li>
+                <li>Choose <strong>External</strong> and click <strong>Create</strong>.</li>
+                <li>Fill in the required fields: App name (e.g., "Rapid Indexer"), User support email, and Developer contact information.</li>
+                <li>Click <strong>Save and Continue</strong> through the "Scopes" and "Test Users" sections. You can leave them blank. Finally, go back to the dashboard.</li>
             </ol>
         </div>
 
         <!-- Step 3 -->
         <div class="step">
             <div class="step-header">
-                <div class="step-number">3</div><h3 class="step-title">Create a Service Account</h3>
+                <div class="step-number">3</div><h3 class="step-title">Create the OAuth Client ID</h3>
             </div>
             <ol>
-                <li>Go to the <a href="https://console.cloud.google.com/iam-admin/serviceaccounts" target="_blank">Service Accounts page</a>.</li>
-                <li>Click <strong>+ Create Service Account</strong>. Give it a name, click <strong>Create and Continue</strong>.</li>
-                <li>For Role, select <strong>Owner</strong>. Click <strong>Continue</strong>, then <strong>Done</strong>.</li>
+                <li>Go back to <strong>Credentials</strong>, click <strong>+ CREATE CREDENTIALS &rarr; OAuth client ID</strong> again.</li>
+                <li>For <strong>Application type</strong>, select <strong>Web application</strong>.</li>
+                <li>Give it a name (e.g., "Rapid Indexer Web Client").</li>
+                <li class="highlight">Under <strong>Authorized redirect URIs</strong>, click <strong>+ ADD URI</strong>. Enter the address of your application followed by <code>/auth/callback</code>.
+                    <br>For local testing: <code>http://127.0.0.1:8000/auth/callback</code>
+                    <br>For a live server: <code>https://yourdomain.com/auth/callback</code>
+                </li>
+                <li>Click <strong>Create</strong>.</li>
             </ol>
-            <div class="highlight"><p><strong>Copy the new service account's email address.</strong> You need it next!</p></div>
         </div>
         
         <!-- Step 4 -->
         <div class="step">
             <div class="step-header">
-                <div class="step-number">4</div><h3 class="step-title">Connect to Google Search Console</h3>
+                <div class="step-number">4</div><h3 class="step-title">Get Your Credentials</h3>
             </div>
-            <ol>
-                <li>Go to your <a href="https://search.google.com/search-console" target="_blank">Google Search Console</a>.</li>
-                <li>Go to <strong>Settings &rarr; Users and permissions</strong>.</li>
-                <li>Click <strong>Add User</strong>, paste the service account email, and set Permission to <strong>Owner</strong>. Click <strong>Add</strong>.</li>
-            </ol>
-        </div>
-
-        <!-- Step 5 -->
-        <div class="step">
-            <div class="step-header">
-                <div class="step-number">5</div><h3 class="step-title">Download Your JSON Key</h3>
+            <p>A popup will show your <strong>Client ID</strong> and <strong>Client Secret</strong>. Copy these. You will need to set them as environment variables to run the application.</p>
+            <p>You can also download the JSON file, which contains these values, for your records.</p>
+            <div class="highlight">
+                <p><strong>IMPORTANT:</strong> The person running the server must set these values. They are not for end-users of the tool.</p>
+                <code>export GOOGLE_CLIENT_ID="YOUR_CLIENT_ID_HERE"</code><br>
+                <code>export GOOGLE_CLIENT_SECRET="YOUR_CLIENT_SECRET_HERE"</code><br>
+                <code>export SECRET_KEY="A_RANDOM_STRONG_SECRET_STRING"</code>
             </div>
-            <ol>
-                <li>Go back to the <a href="https://console.cloud.google.com/iam-admin/serviceaccounts" target="_blank">Google Cloud Service Accounts page</a> and click on your new account.</li>
-                <li>Go to the <strong>KEYS</strong> tab, click <strong>Add Key &rarr; Create new key</strong>.</li>
-                <li>Choose <strong>JSON</strong> and click <strong>Create</strong>. A file will download. This is your API key.</li>
-            </ol>
         </div>
+        
         <a href="/" class="back-link">← Back to the Tool</a>
     </div>
 
