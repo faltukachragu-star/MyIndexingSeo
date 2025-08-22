@@ -4,3 +4,4 @@ python-multipart
 aiohttp
 google-auth-oauthlib
 itsdangerous
+websockets
