@@ -4,96 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rapid Indexer - Real-Time API Tool</title>
-        <style>
+    <style>
+        /* All CSS from your original file is fine here. No changes needed. */
         @import url('https://rsms.me/inter/inter.css');
         html { font-family: 'Inter', sans-serif; }
         body { background-color: #f3f4f6; color: #1f2937; margin: 0; padding: 1rem; }
         .page-container { max-width: 800px; margin: 2rem auto; }
-        
         header { display: flex; align-items: center; justify-content: center; margin-bottom: 2rem; }
         header svg { color: #2563eb; width: 40px; height: 40px; }
         header h1 { font-size: 2rem; font-weight: 800; color: #111827; margin: 0 0 0 1rem; }
-        
         .panel { background-color: #ffffff; padding: 2.5rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); border: 1px solid #e5e7eb; }
         .results-panel { margin-top: 2rem; }
         .panel h2 { text-align: center; font-size: 1.5rem; margin-top:0; color: #1f2937;}
-
         label { display: block; margin-top: 1.5rem; margin-bottom: 0.5rem; font-weight: 600; color: #374151; }
         input[type="file"], textarea { width: 100%; padding: 12px; font-size: 1rem; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; }
         textarea { resize: vertical; min-height: 150px; }
-        button { background-color: #2563eb; color: white; padding: 14px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600; width: 100%; transition: background-color 0.2s; margin-top: 1.5rem; }
-        button:hover { background-color: #1d4ed8; }
+        button, a.button { background-color: #2563eb; color: white; padding: 14px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600; width: 100%; transition: background-color 0.2s; margin-top: 1.5rem; display: inline-block; text-align: center; text-decoration: none; box-sizing: border-box; }
+        button:hover, a.button:hover { background-color: #1d4ed8; }
         button:disabled { background-color: #9ca3af; cursor: not-allowed; }
-
         .result { padding: 12px; margin-bottom: 8px; border-radius: 6px; border-left-width: 5px; border-left-style: solid; }
         .result-success { background-color: #f0fdf4; border-color: #22c55e; color: #15803d; }
         .result-error { background-color: #fef2f2; border-color: #ef4444; color: #b91c1c; }
         .result strong { font-family: 'Menlo', 'Consolas', monospace; display: block; word-wrap: break-word; }
         .result p { margin: 5px 0 0; }
-        
-        /* --- FINAL & GUARANTEED PIXEL-PERFECT MODAL STYLES --- */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(17, 24, 39, 0.6);
-            display: none; justify-content: center; align-items: center;
-            z-index: 1000; backdrop-filter: blur(4px);
-        }
-        .modal-box {
-            background: white; padding: 2rem; border-radius: 12px;
-            max-width: 420px; width: 90%; text-align: center;
-            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-        }
-        .modal-box h2 {
-            margin-top: 0; font-size: 1.25rem; color: #111827;
-        }
-        .modal-box p {
-            color: #4b5563; font-size: 1rem; line-height: 1.5; margin: 1rem 0 0 0;
-        }
-        .modal-box .button-group {
-            margin-top: 1.75rem; display: flex; gap: 0.75rem;
-        }
-        
-        /* THIS IS THE MASTER BUTTON TEMPLATE. BOTH BUTTONS WILL USE THIS. */
-        .modal-button {
-            flex: 1 1 0; /* Ensures same width */
-            padding: 10px 16px; 
-            font-size: 0.95rem;
-            font-family: 'Inter', sans-serif; /* Explicitly set font */
-            font-weight: 600;
-            text-decoration: none;
-            border-radius: 8px;
-            border: 1px solid; /* Define a border */
-            cursor: pointer;
-            transition: background-color 0.2s, border-color 0.2s;
-            display: inline-flex; /* Use flex to vertically center text */
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* MODIFIER for the secondary "Got it" button */
-        .modal-button.secondary {
-            background-color: #ffffff; 
-            color: #374151;
-            border-color: #d1d5db;
-        }
-        .modal-button.secondary:hover {
-            background-color: #f9fafb;
-        }
-        
-        /* MODIFIER for the primary "View Tutorial" button */
-        .modal-button.primary {
-            background-color: #2563eb; 
-            color: white;
-            border-color: #2563eb; /* Use a colored border to maintain geometry */
-        }
-        .modal-button.primary:hover {
-            background-color: #1d4ed8;
-            border-color: #1d4ed8;
-        }
-        
+        .auth-panel { text-align: center; margin-bottom: 2rem; }
+        .user-status { background-color: #eef2ff; color: #4338ca; padding: 1rem; border-radius: 8px; text-align: center; margin-bottom: 2rem; }
+        .user-status p { margin: 0; }
+        .user-status a { color: #4338ca; font-weight: 600; margin-left: 1rem; }
         footer { text-align: center; margin-top: 2rem; color: #9ca3af; }
-
-        @media (max-width: 640px) { /* Other styles remain unchanged */ }
     </style>
 </head>
 <body>
@@ -104,13 +42,15 @@
         <h1>Rapid Indexer</h1>
     </header>
 
-    <div class="panel main-tool">
+    <!-- NEW: Authentication Status Panel -->
+    <div id="auth-container">
+        <!-- This will be populated by JavaScript -->
+    </div>
+
+    <!-- The main tool is now hidden by default until login -->
+    <div class="panel main-tool" id="main-tool" style="display: none;">
         <form id="indexing-form">
-            <!-- *** THE TUTORIAL LINK HAS BEEN REMOVED FROM HERE FOR A CLEANER UI *** -->
-            <label for="service_account_file">1. Upload API Key</label>
-            <input type="file" id="service_account_file" accept=".json">
-            
-            <label for="url_file">2. Submit URLs (.txt or .xml)</label>
+            <label for="url_file">Submit URLs (.txt or .xml)</label>
             <input type="file" id="url_file" accept=".txt,.xml">
             
             <div style="text-align: center; margin: 1rem 0; color: #9ca3af;">OR</div>
@@ -125,89 +65,117 @@
     </div>
 
     <footer>
-        <p>A high-performance indexing tool.</p>
+        <p>A high-performance indexing tool. <a href="/tutorial">Setup Guide</a></p>
     </footer>
 </div>
 
-<!-- ### THIS IS THE FULL, CORRECTED, AND RESTORED POPUP MODAL ### -->
-<div class="modal-overlay" id="api-key-modal">
-    <div class="modal-box">
-        <h2>API Key Required</h2>
-        <p>Please upload your Google Service Account JSON key to continue. If you don't have one, our tutorial will guide you through the quick setup.</p>
-        <div class="button-group">
-            <button onclick="document.getElementById('api-key-modal').style.display='none'">Got it</button>
-            <a href="/tutorial" target="_blank" class="button primary">View Tutorial</a>
-        </div>
-    </div>
-</div>
-
 <script>
-    // The JavaScript logic is already perfect and does not need any changes.
-    // It will correctly show the modal defined above.
-    const form = document.getElementById('indexing-form');
-    const resultsPanel = document.getElementById('results-panel');
-    const submitButton = document.getElementById('submit-button');
-    const apiKeyModal = document.getElementById('api-key-modal');
+    document.addEventListener('DOMContentLoaded', async () => {
+        const authContainer = document.getElementById('auth-container');
+        const mainTool = document.getElementById('main-tool');
+        const form = document.getElementById('indexing-form');
+        const resultsPanel = document.getElementById('results-panel');
+        const submitButton = document.getElementById('submit-button');
 
-    form.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const credsFile = document.getElementById('service_account_file').files[0];
-        if (!credsFile) {
-            apiKeyModal.style.display = 'flex'; // This line is what makes the popup appear
-            return;
-        }
-        
-        // ... The rest of your proven, working JavaScript logic goes here ...
-        const urlsFile = document.getElementById('url_file').files[0];
-        const urlsText = document.getElementById('urls_textarea').value;
-        submitButton.disabled = true;
-        submitButton.textContent = 'Processing...';
-        resultsPanel.style.display = 'block';
-        resultsPanel.innerHTML = '<h2 id="results-title">Live Results</h2><div id="results-container"></div>'; // Reset results panel
-        const resultsTitle = document.getElementById('results-title');
-        const resultsContainer = document.getElementById('results-container');
-        
+        // Check login status on page load
         try {
-            const payload = {};
-            payload.credentials = JSON.parse(await (file => new Promise((res, rej) => { const r = new FileReader(); r.onload = e => res(e.target.result); r.onerror = e => rej(e); r.readAsText(file); }))(credsFile));
-            if (urlsFile) {
-                payload.urls_file = { filename: urlsFile.name, content: await (file => new Promise((res, rej) => { const r = new FileReader(); r.onload = e => res(e.target.result); r.onerror = e => rej(e); r.readAsText(file); }))(urlsFile) };
-            } else if (urlsText) {
-                payload.urls_text = urlsText;
+            const response = await fetch('/status');
+            const data = await response.json();
+
+            if (data.logged_in) {
+                authContainer.innerHTML = `
+                    <div class="user-status">
+                        <p>Signed in as <strong>${data.user.email}</strong> <a href="/logout">[Logout]</a></p>
+                    </div>
+                `;
+                mainTool.style.display = 'block';
             } else {
-                throw new Error("No URLs provided.");
+                authContainer.innerHTML = `
+                    <div class="auth-panel">
+                        <h2>Sign In to Continue</h2>
+                        <p style="color: #4b5563;">Connect your Google Account to use the Indexing API.</p>
+                        <a href="/login" class="button">
+                            <svg style="width: 20px; height: 20px; margin-right: 12px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571l6.19,5.238C42.012,35.244,44,30.036,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path></svg>
+                            Sign In with Google
+                        </a>
+                    </div>
+                `;
+                mainTool.style.display = 'none';
             }
-            
-            const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-            const ws = new WebSocket(`${wsProtocol}${window.location.host}/ws`);
-            ws.onopen = () => { resultsTitle.textContent = `Live processing started...`; ws.send(JSON.stringify(payload)); };
-            ws.onmessage = (event) => {
-                const result = JSON.parse(event.data);
-                if (result.type === 'result') {
-                    const resultDiv = document.createElement('div');
-                    resultDiv.classList.add('result');
-                    if (result.status === 'success') {
-                        resultDiv.classList.add('result-success');
-                        resultDiv.innerHTML = `<strong>${result.url}</strong><p>✅ SUCCESS</p>`;
-                    } else {
-                        resultDiv.classList.add('result-error');
-                        resultDiv.innerHTML = `<strong>${result.url}</strong><p>❌ FAILED: ${result.message}</p>`;
-                    }
-                    resultsContainer.appendChild(resultDiv);
-                } else if (result.type === 'done') {
-                    resultsTitle.textContent = `Processing Complete!`;
-                    submitButton.disabled = false;
-                    submitButton.textContent = 'Start Real-Time Indexing';
-                    ws.close();
-                } else if (result.type === 'critical_error') { throw new Error(`Server Error: ${result.message}`); }
-            };
-            ws.onerror = () => { throw new Error("WebSocket connection failed."); };
         } catch (error) {
-            resultsTitle.textContent = 'Error';
-            resultsPanel.innerHTML += `<div class="result result-error"><p><strong>Error:</strong> ${error.message}</p></div>`;
-            submitButton.disabled = false;
-            submitButton.textContent = 'Start Real-Time Indexing';
+            console.error('Failed to get login status:', error);
+            authContainer.innerHTML = '<p style="color: red; text-align: center;">Could not connect to the server.</p>';
         }
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            // The old modal for API key is no longer needed.
+            // Authentication is now handled by the server session.
+            
+            const urlsFile = document.getElementById('url_file').files[0];
+            const urlsText = document.getElementById('urls_textarea').value;
+            submitButton.disabled = true;
+            submitButton.textContent = 'Processing...';
+            resultsPanel.style.display = 'block';
+            resultsPanel.innerHTML = '<h2 id="results-title">Live Results</h2><div id="results-container"></div>'; 
+            const resultsTitle = document.getElementById('results-title');
+            const resultsContainer = document.getElementById('results-container');
+            
+            try {
+                // The payload no longer sends credentials.
+                // The server knows who we are from the session cookie.
+                const payload = {};
+                if (urlsFile) {
+                    payload.urls_file = { filename: urlsFile.name, content: await urlsFile.text() };
+                } else if (urlsText) {
+                    payload.urls_text = urlsText;
+                } else {
+                    throw new Error("No URLs provided.");
+                }
+                
+                const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+                const ws = new WebSocket(`${wsProtocol}${window.location.host}/ws`);
+                
+                ws.onopen = () => { 
+                    resultsTitle.textContent = `Live processing started...`; 
+                    ws.send(JSON.stringify(payload)); 
+                };
+                
+                ws.onmessage = (event) => {
+                    const result = JSON.parse(event.data);
+                    if (result.type === 'result') {
+                        const resultDiv = document.createElement('div');
+                        resultDiv.classList.add('result');
+                        if (result.status === 'success') {
+                            resultDiv.classList.add('result-success');
+                            resultDiv.innerHTML = `<strong>${result.url}</strong><p>✅ SUCCESS</p>`;
+                        } else {
+                            resultDiv.classList.add('result-error');
+                            resultDiv.innerHTML = `<strong>${result.url}</strong><p>❌ FAILED: ${result.message}</p>`;
+                        }
+                        resultsContainer.appendChild(resultDiv);
+                    } else if (result.type === 'done') {
+                        resultsTitle.textContent = `Processing Complete!`;
+                        submitButton.disabled = false;
+                        submitButton.textContent = 'Start Real-Time Indexing';
+                        ws.close();
+                    } else if (result.type === 'critical_error') { 
+                        throw new Error(`Server Error: ${result.message}`); 
+                    }
+                };
+                ws.onerror = (err) => { throw new Error("WebSocket connection failed."); };
+                
+            } catch (error) {
+                resultsTitle.textContent = 'Error';
+                const errorDiv = document.createElement('div');
+                errorDiv.classList.add('result', 'result-error');
+                errorDiv.innerHTML = `<p><strong>Error:</strong> ${error.message}</p>`;
+                resultsContainer.appendChild(errorDiv);
+                submitButton.disabled = false;
+                submitButton.textContent = 'Start Real-Time Indexing';
+            }
+        });
     });
 </script>
 
