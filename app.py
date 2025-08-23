@@ -110,6 +110,89 @@ async def status(request: Request):
     if 'user' in request.session:
         return {"logged_in": True, "user": request.session['user']}
     return {"logged_in": False}
+# ... (after the /status endpoint)
+
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+from datetime import date, timedelta
+
+# ...
+
+@app.get("/status")
+async def status(request: Request):
+    if 'user' in request.session:
+        return {"logged_in": True, "user": request.session['user']}
+    return {"logged_in": False}
+
+# --- NEW: GSC API DATA ENDPOINT ---
+@app.get("/gsc-data")
+async def get_gsc_data(request: Request, site_url: str):
+    if 'credentials' not in request.session:
+        return {"error": "Authentication required."}, 401
+
+    if not site_url or not site_url.startswith('http'):
+        return {"error": "A valid site URL (e.g., https://example.com) is required."}, 400
+
+    try:
+        creds_data = request.session['credentials']
+        credentials = Credentials(
+            token=creds_data['token'],
+            refresh_token=creds_data['refresh_token'],
+            token_uri=creds_data['token_uri'],
+            client_id=creds_data['client_id'],
+            client_secret=creds_data['client_secret'],
+            scopes=creds_data['scopes']
+        )
+        
+        # Use asyncio.to_thread to run the synchronous Google API client code
+        # in a separate thread, preventing it from blocking the server.
+        def fetch_data():
+            service = build('webmasters', 'v3', credentials=credentials)
+            
+            # Define the date range (e.g., last 7 days)
+            end_date = date.today().strftime('%Y-%m-%d')
+            start_date = (date.today() - timedelta(days=7)).strftime('%Y-%m-%d')
+            
+            # API request body
+            api_request = {
+                'startDate': start_date,
+                'endDate': end_date,
+                'dimensions': ['page'],
+                'rowLimit': 25 # Get top 25 pages
+            }
+            
+            response = service.searchanalytics().query(siteUrl=site_url, body=api_request).execute()
+            return response.get('rows', [])
+
+        gsc_data = await asyncio.to_thread(fetch_data)
+        
+        # Format the data for the frontend
+        formatted_data = []
+        for row in gsc_data:
+            formatted_data.append({
+                "page": row['keys'][0],
+                "clicks": row['clicks'],
+                "impressions": row['impressions'],
+                "ctr": f"{row['ctr'] * 100:.2f}%",
+                "position": f"{row['position']:.2f}"
+            })
+        
+        return {"data": formatted_data}
+
+    except HttpError as e:
+        error_content = json.loads(e.content)
+        error_message = error_content.get("error", {}).get("message", "An unknown API error occurred.")
+        log(f"GSC API Error: {error_message}")
+        # Provide a user-friendly error message
+        if e.resp.status == 403:
+            return {"error": f"Permission Denied. Make sure you have access to '{site_url}' in Google Search Console and have granted this app permission."}, 403
+        return {"error": f"GSC API Error: {error_message}"}, e.resp.status
+    except Exception as e:
+        log(f"An unexpected error occurred in get_gsc_data: {e}")
+        return {"error": "An internal server error occurred."}, 500
+
+# --- URL Processing Logic (Unchanged) ---
+# ... (rest of the file remains the same)
 
 # --- URL Processing Logic (Unchanged) ---
 # ... (The process_url_task and parse_urls_from_payload functions are perfect as they are, no changes needed) ...
