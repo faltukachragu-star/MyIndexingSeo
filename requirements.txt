@@ -5,3 +5,4 @@ aiohttp
 google-auth-oauthlib
 itsdangerous
 websockets
+google-api-python-client
