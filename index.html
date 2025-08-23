@@ -126,39 +126,59 @@
         const gscSubmitButton = document.getElementById('gsc-submit-button');
         const gscResultsContainer = document.getElementById('gsc-results-container');
         
-        gscForm.addEventListener('submit', async (event) => {
-            event.preventDefault();
-            const siteUrl = document.getElementById('site_url').value;
-            gscSubmitButton.disabled = true;
-            gscSubmitButton.textContent = 'Fetching Data...';
-            gscResultsContainer.innerHTML = '<p style="text-align:center;">Loading...</p>';
+       // --- GSC Tool Logic ---
+const gscForm = document.getElementById('gsc-form');
+const gscSubmitButton = document.getElementById('gsc-submit-button');
+const gscResultsContainer = document.getElementById('gsc-results-container');
 
+gscForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const siteUrl = document.getElementById('site_url').value;
+    gscSubmitButton.disabled = true;
+    gscSubmitButton.textContent = 'Fetching Data...';
+    gscResultsContainer.innerHTML = '<p style="text-align:center;">Loading...</p>';
+
+    try {
+        const response = await fetch(`/gsc-data?site_url=${encodeURIComponent(siteUrl)}`);
+
+        // NEW: Check if the response was successful BEFORE parsing JSON
+        if (!response.ok) {
+            // Try to get a specific error message from the server's response body
+            let serverError = `HTTP Error: ${response.status} ${response.statusText}`;
             try {
-                const response = await fetch(`/gsc-data?site_url=${encodeURIComponent(siteUrl)}`);
-                const result = await response.json();
-
-                if (response.ok) {
-                    if (result.data && result.data.length > 0) {
-                        let tableHTML = '<table><thead><tr><th>Page</th><th>Clicks</th><th>Impressions</th><th>CTR</th><th>Position</th></tr></thead><tbody>';
-                        result.data.forEach(row => {
-                            tableHTML += `<tr><td>${row.page}</td><td>${row.clicks}</td><td>${row.impressions}</td><td>${row.ctr}</td><td>${row.position}</td></tr>`;
-                        });
-                        tableHTML += '</tbody></table>';
-                        gscResultsContainer.innerHTML = tableHTML;
-                    } else {
-                        gscResultsContainer.innerHTML = '<p style="text-align:center;">No performance data found for this site in the last 7 days.</p>';
-                    }
-                } else {
-                    throw new Error(result.error || 'Failed to fetch data.');
-                }
-            } catch (error) {
-                gscResultsContainer.innerHTML = `<div class="result result-error"><p><strong>Error:</strong> ${error.message}</p></div>`;
-            } finally {
-                gscSubmitButton.disabled = false;
-                gscSubmitButton.textContent = 'Get Performance Data (Last 7 Days)';
+                // This assumes the server sends JSON for errors, which our Python code does
+                const errorJson = await response.json();
+                serverError = errorJson.error || JSON.stringify(errorJson);
+            } catch (e) {
+                // If parsing the error response fails, it wasn't JSON.
+                // We can log the raw text to the console for debugging.
+                console.error("Could not parse error response as JSON. Body:", await response.text());
             }
-        });
+            throw new Error(serverError);
+        }
+        
+        // If we get here, the response is OK and we can safely parse it
+        const result = await response.json();
 
+        if (result.data && result.data.length > 0) {
+            let tableHTML = '<table><thead><tr><th>Page</th><th>Clicks</th><th>Impressions</th><th>CTR</th><th>Position</th></tr></thead><tbody>';
+            result.data.forEach(row => {
+                tableHTML += `<tr><td>${row.page}</td><td>${row.clicks}</td><td>${row.impressions}</td><td>${row.ctr}</td><td>${row.position}</td></tr>`;
+            });
+            tableHTML += '</tbody></table>';
+            gscResultsContainer.innerHTML = tableHTML;
+        } else {
+            gscResultsContainer.innerHTML = '<p style="text-align:center;">No performance data found for this site in the last 7 days.</p>';
+        }
+
+    } catch (error) {
+        // This catch block now handles both network errors and server-side errors gracefully
+        gscResultsContainer.innerHTML = `<div class="result result-error"><p><strong>Error:</strong> ${error.message}</p></div>`;
+    } finally {
+        gscSubmitButton.disabled = false;
+        gscSubmitButton.textContent = 'Get Performance Data (Last 7 Days)';
+    }
+});
 
         // --- Indexing API Tool Logic (Original Logic) ---
         const indexingForm = document.getElementById('indexing-form');
