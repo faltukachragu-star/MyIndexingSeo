@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notificrawl - Real-Time Indexing API Tool</title>
+    <title>Notificrawl - Real-Time Indexing & GSC Tool</title>
     <style>
         @import url('https://rsms.me/inter/inter.css');
         html { font-family: 'Inter', sans-serif; }
@@ -12,11 +12,10 @@
         header { display: flex; align-items: center; justify-content: center; margin-bottom: 2rem; }
         header svg { color: #2563eb; width: 40px; height: 40px; }
         header h1 { font-size: 2rem; font-weight: 800; color: #111827; margin: 0 0 0 1rem; }
-        .panel { background-color: #ffffff; padding: 2.5rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); border: 1px solid #e5e7eb; }
-        .results-panel { margin-top: 2rem; }
+        .panel { background-color: #ffffff; padding: 2.5rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); border: 1px solid #e5e7eb; margin-top: 2rem; }
         .panel h2 { text-align: center; font-size: 1.5rem; margin-top:0; color: #1f2937;}
         label { display: block; margin-top: 1.5rem; margin-bottom: 0.5rem; font-weight: 600; color: #374151; }
-        input[type="file"], textarea { width: 100%; padding: 12px; font-size: 1rem; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; }
+        input[type="file"], input[type="text"], textarea { width: 100%; padding: 12px; font-size: 1rem; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; }
         textarea { resize: vertical; min-height: 150px; }
         button, a.button { background-color: #2563eb; color: white; padding: 14px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600; width: 100%; transition: background-color 0.2s; margin-top: 1.5rem; display: inline-block; text-align: center; text-decoration: none; box-sizing: border-box; }
         button:hover, a.button:hover { background-color: #1d4ed8; }
@@ -26,10 +25,15 @@
         .result-error { background-color: #fef2f2; border-color: #ef4444; color: #b91c1c; }
         .result strong { font-family: 'Menlo', 'Consolas', monospace; display: block; word-wrap: break-word; }
         .result p { margin: 5px 0 0; }
-        .auth-panel { text-align: center; margin-bottom: 2rem; }
-        .user-status { background-color: #eef2ff; color: #4338ca; padding: 1rem; border-radius: 8px; text-align: center; margin-bottom: 2rem; }
+        .auth-panel { text-align: center; }
+        .user-status { background-color: #eef2ff; color: #4338ca; padding: 1rem; border-radius: 8px; text-align: center; }
         .user-status p { margin: 0; }
         .user-status a { color: #4338ca; font-weight: 600; margin-left: 1rem; }
+        .tool-container { display: none; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1.5rem; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e5e7eb; }
+        th { background-color: #f9fafb; font-weight: 600; color: #374151; }
+        td { color: #4b5563; word-break: break-all;}
         footer { text-align: center; margin-top: 2rem; color: #9ca3af; font-size: 0.9rem; }
         footer a { color: #6b7280; margin: 0 0.5rem; }
     </style>
@@ -46,24 +50,36 @@
         <!-- This will be populated by JavaScript -->
     </div>
 
-    <div class="panel main-tool" id="main-tool" style="display: none;">
-        <form id="indexing-form">
-            <label for="url_file">Submit URLs (.txt or .xml)</label>
-            <input type="file" id="url_file" accept=".txt,.xml">
-            
-            <div style="text-align: center; margin: 1rem 0; color: #9ca3af;">OR</div>
-            <textarea id="urls_textarea" placeholder="Paste one URL per line here..."></textarea>
-            
-            <button type="submit" id="submit-button">Start Indexing Request</button>
-        </form>
+    <div class="tool-container" id="tool-container">
+        <!-- GSC Panel -->
+        <div class="panel">
+            <h2>Search Console Performance</h2>
+            <form id="gsc-form">
+                <label for="site_url">Your Website URL</label>
+                <input type="text" id="site_url" placeholder="e.g., https://example.com" required>
+                <button type="submit" id="gsc-submit-button">Get Performance Data (Last 7 Days)</button>
+            </form>
+            <div id="gsc-results-container"></div>
+        </div>
+
+        <!-- Indexing API Panel -->
+        <div class="panel">
+            <h2>Google Indexing API Notifier</h2>
+            <form id="indexing-form">
+                <label for="url_file">Submit URLs from File (.txt or .xml)</label>
+                <input type="file" id="url_file" accept=".txt,.xml">
+                
+                <div style="text-align: center; margin: 1rem 0; color: #9ca3af;">OR</div>
+                <textarea id="urls_textarea" placeholder="Paste one URL per line here..."></textarea>
+                
+                <button type="submit" id="indexing-submit-button">Start Indexing Request</button>
+            </form>
+            <div id="indexing-results-panel" style="display: none;"></div>
+        </div>
     </div>
     
-    <div class="panel results-panel" id="results-panel" style="display: none;">
-        <!-- Results will be displayed here -->
-    </div>
-
     <footer>
-        <p>A high-performance indexing notification tool.</p>
+        <p>A high-performance indexing and GSC tool.</p>
         <p>
             <a href="/privacy">Privacy Policy</a> &bull; <a href="/terms">Terms of Service</a>
         </p>
@@ -73,11 +89,9 @@
 <script>
     document.addEventListener('DOMContentLoaded', async () => {
         const authContainer = document.getElementById('auth-container');
-        const mainTool = document.getElementById('main-tool');
-        const form = document.getElementById('indexing-form');
-        const resultsPanel = document.getElementById('results-panel');
-        const submitButton = document.getElementById('submit-button');
+        const toolContainer = document.getElementById('tool-container');
 
+        // --- Authentication Check ---
         try {
             const response = await fetch('/status');
             const data = await response.json();
@@ -88,35 +102,78 @@
                         <p>Signed in as <strong>${data.user.email}</strong> <a href="/logout">[Logout]</a></p>
                     </div>
                 `;
-                mainTool.style.display = 'block';
+                toolContainer.style.display = 'block';
             } else {
                 authContainer.innerHTML = `
-                    <div class="auth-panel">
+                    <div class="panel auth-panel">
                         <h2>Sign In to Continue</h2>
-                        <p style="color: #4b5563;">Connect your Google Account to use the Indexing API.</p>
+                        <p style="color: #4b5563;">Connect your Google Account to use the Indexing & Search Console APIs.</p>
                         <a href="/login" class="button">
                             <svg style="width: 20px; height: 20px; margin-right: 12px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571l6.19,5.238C42.012,35.244,44,30.036,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path></svg>
                             Sign In with Google
                         </a>
                     </div>
                 `;
-                mainTool.style.display = 'none';
+                toolContainer.style.display = 'none';
             }
         } catch (error) {
             console.error('Failed to get login status:', error);
             authContainer.innerHTML = '<p style="color: red; text-align: center;">Could not connect to the server.</p>';
         }
 
-        form.addEventListener('submit', async (event) => {
+        // --- GSC Tool Logic ---
+        const gscForm = document.getElementById('gsc-form');
+        const gscSubmitButton = document.getElementById('gsc-submit-button');
+        const gscResultsContainer = document.getElementById('gsc-results-container');
+        
+        gscForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const siteUrl = document.getElementById('site_url').value;
+            gscSubmitButton.disabled = true;
+            gscSubmitButton.textContent = 'Fetching Data...';
+            gscResultsContainer.innerHTML = '<p style="text-align:center;">Loading...</p>';
+
+            try {
+                const response = await fetch(`/gsc-data?site_url=${encodeURIComponent(siteUrl)}`);
+                const result = await response.json();
+
+                if (response.ok) {
+                    if (result.data && result.data.length > 0) {
+                        let tableHTML = '<table><thead><tr><th>Page</th><th>Clicks</th><th>Impressions</th><th>CTR</th><th>Position</th></tr></thead><tbody>';
+                        result.data.forEach(row => {
+                            tableHTML += `<tr><td>${row.page}</td><td>${row.clicks}</td><td>${row.impressions}</td><td>${row.ctr}</td><td>${row.position}</td></tr>`;
+                        });
+                        tableHTML += '</tbody></table>';
+                        gscResultsContainer.innerHTML = tableHTML;
+                    } else {
+                        gscResultsContainer.innerHTML = '<p style="text-align:center;">No performance data found for this site in the last 7 days.</p>';
+                    }
+                } else {
+                    throw new Error(result.error || 'Failed to fetch data.');
+                }
+            } catch (error) {
+                gscResultsContainer.innerHTML = `<div class="result result-error"><p><strong>Error:</strong> ${error.message}</p></div>`;
+            } finally {
+                gscSubmitButton.disabled = false;
+                gscSubmitButton.textContent = 'Get Performance Data (Last 7 Days)';
+            }
+        });
+
+
+        // --- Indexing API Tool Logic (Original Logic) ---
+        const indexingForm = document.getElementById('indexing-form');
+        const indexingResultsPanel = document.getElementById('indexing-results-panel');
+        const indexingSubmitButton = document.getElementById('indexing-submit-button');
+
+        indexingForm.addEventListener('submit', async (event) => {
             event.preventDefault();
             const urlsFile = document.getElementById('url_file').files[0];
             const urlsText = document.getElementById('urls_textarea').value;
-            submitButton.disabled = true;
-            submitButton.textContent = 'Processing...';
-            resultsPanel.style.display = 'block';
-            resultsPanel.innerHTML = '<h2 id="results-title">Live Results</h2><div id="results-container"></div>'; 
-            const resultsTitle = document.getElementById('results-title');
-            const resultsContainer = document.getElementById('results-container');
+            indexingSubmitButton.disabled = true;
+            indexingSubmitButton.textContent = 'Processing...';
+            indexingResultsPanel.style.display = 'block';
+            indexingResultsPanel.innerHTML = '<h3>Live Indexing Results</h3><div id="results-container-inner"></div>'; 
+            const resultsContainer = document.getElementById('results-container-inner');
             
             try {
                 const payload = {};
@@ -125,7 +182,7 @@
                 } else if (urlsText) {
                     payload.urls_text = urlsText;
                 } else {
-                    throw new Error("No URLs provided.");
+                    throw new Error("No URLs provided for indexing.");
                 }
                 
                 const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
@@ -147,9 +204,10 @@
                         }
                         resultsContainer.appendChild(resultDiv);
                     } else if (result.type === 'done') {
-                        resultsTitle.textContent = `Processing Complete!`;
-                        submitButton.disabled = false;
-                        submitButton.textContent = 'Start Indexing Request';
+                        const title = indexingResultsPanel.querySelector('h3');
+                        title.textContent = `Indexing Processing Complete!`;
+                        indexingSubmitButton.disabled = false;
+                        indexingSubmitButton.textContent = 'Start Indexing Request';
                         ws.close();
                     } else if (result.type === 'critical_error') { 
                         throw new Error(`Server Error: ${result.message}`); 
@@ -158,13 +216,14 @@
                 ws.onerror = (err) => { throw new Error("WebSocket connection failed."); };
                 
             } catch (error) {
-                resultsTitle.textContent = 'Error';
+                const title = indexingResultsPanel.querySelector('h3');
+                title.textContent = 'Error';
                 const errorDiv = document.createElement('div');
                 errorDiv.classList.add('result', 'result-error');
                 errorDiv.innerHTML = `<p><strong>Error:</strong> ${error.message}`;
                 resultsContainer.appendChild(errorDiv);
-                submitButton.disabled = false;
-                submitButton.textContent = 'Start Indexing Request';
+                indexingSubmitButton.disabled = false;
+                indexingSubmitButton.textContent = 'Start Indexing Request';
             }
         });
     });
