@@ -49,13 +49,15 @@
         <h1>Notificrawl</h1>
     </header>
 
-    <div id="auth-container"></div>
+    <div id="auth-container">
+        <!-- JS will populate this. If it stays empty, JS failed. -->
+    </div>
 
     <div class="tool-container" id="tool-container">
         <div class="panel">
             <h2>1. Select Your Website</h2>
             <div id="site-selector-container">
-                <p style="text-align:center;">Loading your sites from Google Search Console...</p>
+                <p style="text-align:center;">Checking login status...</p>
             </div>
         </div>
 
@@ -97,17 +99,33 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', async () => {
-    const authContainer = document.getElementById('auth-container');
-    const toolContainer = document.getElementById('tool-container');
-    const siteSelectorContainer = document.getElementById('site-selector-container');
-    const gscTools = document.getElementById('gsc-tools');
-    let selectedSiteUrl = null;
+document.addEventListener('DOMContentLoaded', () => {
+    // --- Top-level error boundary to prevent blank screen ---
+    try {
+        // --- DOM Element References ---
+        const authContainer = document.getElementById('auth-container');
+        const toolContainer = document.getElementById('tool-container');
+        const siteSelectorContainer = document.getElementById('site-selector-container');
+        const gscTools = document.getElementById('gsc-tools');
+        let selectedSiteUrl = null;
 
-    // --- Authentication and Site Loading ---
-    async function initializeApp() {
-        try {
+        // --- Helper Function for Robust Error Handling ---
+        const handleApiError = async (response) => {
+            let message = `HTTP Error: ${response.status} ${response.statusText}`;
+            try {
+                const errorJson = await response.json();
+                // FastAPI uses 'detail', Google's direct errors might use 'message'
+                message = errorJson.detail || errorJson.error?.message || JSON.stringify(errorJson);
+            } catch (e) {
+                // The response was not JSON, do nothing and stick with the HTTP error
+            }
+            throw new Error(message);
+        };
+
+        // --- Main Application Logic ---
+        const initializeApp = async () => {
             const response = await fetch('/status');
+            if (!response.ok) await handleApiError(response);
             const data = await response.json();
 
             if (data.logged_in) {
@@ -117,18 +135,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             } else {
                 authContainer.innerHTML = `<div class="panel auth-panel"><h2>Sign In to Continue</h2><p style="color: #4b5563;">Connect your Google Account to use the Indexing & Search Console APIs.</p><a href="/login" class="button"><svg style="width: 20px; height: 20px; margin-right: 12px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571l6.19,5.238C42.012,35.244,44,30.036,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path></svg>Sign In with Google</a></div>`;
             }
-        } catch (error) {
-            authContainer.innerHTML = '<p style="color: red; text-align: center;">Could not connect to the server.</p>';
-        }
-    }
+        };
 
-    async function fetchSites() {
-        try {
+        const fetchSites = async () => {
+            siteSelectorContainer.innerHTML = `<p style="text-align:center;">Loading your sites from Google Search Console...</p>`;
             const response = await fetch('/gsc-sites');
-            if (!response.ok) throw new Error(`Server error: ${response.statusText}`);
+            if (!response.ok) await handleApiError(response);
             const data = await response.json();
+
             if (data.sites && data.sites.length > 0) {
-                let options = data.sites.map(site => `<option value="${site.siteUrl}">${site.siteUrl}</option>`).join('');
+                const options = data.sites.map(site => `<option value="${site.siteUrl}">${site.siteUrl}</option>`).join('');
                 siteSelectorContainer.innerHTML = `<select id="site-selector"><option value="">-- Select a property --</option>${options}</select>`;
                 document.getElementById('site-selector').addEventListener('change', (e) => {
                     selectedSiteUrl = e.target.value;
@@ -137,32 +153,117 @@ document.addEventListener('DOMContentLoaded', async () => {
             } else {
                 siteSelectorContainer.innerHTML = '<p style="text-align:center;">No sites found in your Google Search Console account.</p>';
             }
-        } catch (error) {
-            siteSelectorContainer.innerHTML = `<div class="result result-error"><p><strong>Error fetching sites:</strong> ${error.message}</p></div>`;
-        }
-    }
+        };
 
-    // --- GSC Performance Tool Logic ---
-    const gscPerfButton = document.getElementById('gsc-perf-button');
-    const gscResultsContainer = document.getElementById('gsc-results-container');
-    gscPerfButton.addEventListener('click', async () => {
-        if (!selectedSiteUrl) {
-            alert('Please select a site first.');
-            return;
-        }
-        gscPerfButton.disabled = true;
-        gscPerfButton.textContent = 'Fetching Data...';
-        gscResultsContainer.innerHTML = '<p style="text-align:center;">Loading...</p>';
-        try {
-            const response = await fetch(`/gsc-data?site_url=${encodeURIComponent(selectedSiteUrl)}`);
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.detail || 'Failed to fetch data');
-            
-            if (result.data && result.data.length > 0) {
-                let tableHTML = '<table><thead><tr><th>Page</th><th>Clicks</th><th>Impressions</th><th>CTR</th><th>Position</th></tr></thead><tbody>';
-                result.data.forEach(row => { tableHTML += `<tr><td>${row.page}</td><td>${row.clicks}</td><td>${row.impressions}</td><td>${row.ctr}</td><td>${row.position}</td></tr>`; });
-                gscResultsContainer.innerHTML = tableHTML + '</tbody></table>';
-            } else {
-                gscResultsContainer.innerHTML = '<p style="text-align:center;">No performance data found for this site in the last 7 days.</p>';
-            }
-        } catch (error) {
+        // --- Event Listeners Setup ---
+        const setupEventListeners = () => {
+            // GSC Performance
+            document.getElementById('gsc-perf-button').addEventListener('click', async () => {
+                if (!selectedSiteUrl) return;
+                const button = document.getElementById('gsc-perf-button');
+                const resultsContainer = document.getElementById('gsc-results-container');
+                button.disabled = true;
+                button.textContent = 'Fetching Data...';
+                resultsContainer.innerHTML = '<p style="text-align:center;">Loading...</p>';
+                try {
+                    const response = await fetch(`/gsc-data?site_url=${encodeURIComponent(selectedSiteUrl)}`);
+                    if (!response.ok) await handleApiError(response);
+                    const result = await response.json();
+                    if (result.data && result.data.length > 0) {
+                        let tableHTML = '<table><thead><tr><th>Page</th><th>Clicks</th><th>Impressions</th><th>CTR</th><th>Position</th></tr></thead><tbody>';
+                        result.data.forEach(row => { tableHTML += `<tr><td>${row.page}</td><td>${row.clicks}</td><td>${row.impressions}</td><td>${row.ctr}</td><td>${row.position}</td></tr>`; });
+                        resultsContainer.innerHTML = tableHTML + '</tbody></table>';
+                    } else {
+                        resultsContainer.innerHTML = '<p style="text-align:center;">No performance data found for this site in the last 7 days.</p>';
+                    }
+                } catch (error) {
+                    resultsContainer.innerHTML = `<div class="result result-error"><p><strong>Error:</strong> ${error.message}</p></div>`;
+                } finally {
+                    button.disabled = false;
+                    button.textContent = 'Get Performance Data (Last 7 Days)';
+                }
+            });
+
+            // URL Inspection
+            document.getElementById('inspect-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                if (!selectedSiteUrl) return;
+                const button = document.getElementById('inspect-submit-button');
+                const resultsContainer = document.getElementById('inspect-results-container');
+                const inspectionUrl = document.getElementById('inspection_url').value;
+                button.disabled = true;
+                button.textContent = 'Inspecting...';
+                resultsContainer.innerHTML = '<p style="text-align:center;">Loading...</p>';
+                try {
+                    const response = await fetch(`/inspect-url?site_url=${encodeURIComponent(selectedSiteUrl)}&inspection_url=${encodeURIComponent(inspectionUrl)}`);
+                    if (!response.ok) await handleApiError(response);
+                    const result = await response.json();
+                    const { verdict, coverageState, indexingState, lastCrawlTime, pageFetchState, robotsTxtState } = result.status;
+                    let html = `<dl><dt>Overall Verdict:</dt><dd>${verdict || 'N/A'}</dd><dt>Coverage:</dt><dd>${coverageState || 'N/A'}</dd><dt>Indexing State:</dt><dd>${indexingState || 'N/A'}</dd><dt>Last Crawl Time:</dt><dd>${lastCrawlTime ? new Date(lastCrawlTime).toLocaleString() : 'N/A'}</dd><dt>Page Fetch State:</dt><dd>${pageFetchState || 'N/A'}</dd><dt>robots.txt State:</dt><dd>${robotsTxtState || 'N/A'}</dd></dl>`;
+                    resultsContainer.innerHTML = html;
+                } catch (error) {
+                    resultsContainer.innerHTML = `<div class="result result-error"><p><strong>Error:</strong> ${error.message}</p></div>`;
+                } finally {
+                    button.disabled = false;
+                    button.textContent = 'Inspect URL';
+                }
+            });
+
+            // Indexing API
+            document.getElementById('indexing-form').addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const button = document.getElementById('indexing-submit-button');
+                const resultsPanel = document.getElementById('indexing-results-panel');
+                const urlsFile = document.getElementById('url_file').files[0];
+                const urlsText = document.getElementById('urls_textarea').value;
+                button.disabled = true;
+                button.textContent = 'Processing...';
+                resultsPanel.style.display = 'block';
+                resultsPanel.innerHTML = '<h3>Live Indexing Results</h3><div id="results-container-inner"></div>';
+                const resultsContainer = document.getElementById('results-container-inner');
+                try {
+                    const payload = {};
+                    if (urlsFile) payload.urls_file = { filename: urlsFile.name, content: await urlsFile.text() };
+                    else if (urlsText) payload.urls_text = urlsText;
+                    else throw new Error("No URLs provided for indexing.");
+                    const ws = new WebSocket(`${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`);
+                    ws.onopen = () => ws.send(JSON.stringify(payload));
+                    ws.onmessage = (msg) => {
+                        const result = JSON.parse(msg.data);
+                        if (result.type === 'result') {
+                            const div = document.createElement('div');
+                            div.className = `result result-${result.status}`;
+                            div.innerHTML = `<strong>${result.url}</strong><p>${result.status === 'success' ? '✅ SUCCESS' : `❌ FAILED: ${result.message}`}</p>`;
+                            resultsContainer.appendChild(div);
+                        } else if (result.type === 'done') {
+                            resultsPanel.querySelector('h3').textContent = 'Indexing Processing Complete!';
+                            ws.close();
+                        } else if (result.type === 'critical_error') throw new Error(result.message);
+                    };
+                    ws.onerror = () => { throw new Error("WebSocket connection failed."); };
+                    ws.onclose = () => { button.disabled = false; button.textContent = 'Start Indexing Request'; };
+                } catch (error) {
+                    resultsContainer.innerHTML = `<div class="result result-error"><p><strong>Error:</strong> ${error.message}</p></div>`;
+                    button.disabled = false;
+                    button.textContent = 'Start Indexing Request';
+                }
+            });
+        };
+        
+        // --- Start the application ---
+        initializeApp().catch(error => {
+            console.error('Catastrophic failure during initialization:', error);
+            authContainer.innerHTML = `<div class="panel result result-error"><p><strong>A critical error occurred:</strong> ${error.message}</p><p>Please try refreshing the page. If the problem persists, check the browser console for more details.</p></div>`;
+        });
+        
+        setupEventListeners();
+
+    } catch (e) {
+        // This is the ultimate fallback. If something goes wrong even setting up the script.
+        document.body.innerHTML = `<div style="padding: 2rem; text-align: center; font-family: sans-serif;"><h1>Application Error</h1><p>A fatal JavaScript error occurred. Please check the browser's developer console for details.</p><p>Error: ${e.message}</p></div>`;
+    }
+});
+</script>
+
+</body>
+</html>
