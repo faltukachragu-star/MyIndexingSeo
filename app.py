@@ -31,7 +31,8 @@ SCOPES = [
     "openid",
     "https://www.googleapis.com/auth/indexing",
     "https://www.googleapis.com/auth/userinfo.profile",
-    "https://www.googleapis.com/auth/userinfo.email"
+    "https://www.googleapis.com/auth/userinfo.email",
+    "https://www.googleapis.com/auth/webmasters.readonly"
 ]
 
 def log(message):
