@@ -3,12 +3,14 @@ import xml.etree.ElementTree as ET
 import asyncio
 import aiohttp
 import os
-from datetime import datetime
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, Depends
-from fastapi.responses import HTMLResponse, RedirectResponse
+from datetime import datetime, date, timedelta
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, Depends, HTTPException
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from starlette.middleware.sessions import SessionMiddleware
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 from typing import Optional
 
 # --- Configuration from Environment Variables ---
@@ -38,6 +40,20 @@ SCOPES = [
 def log(message):
     print(f"[{datetime.now().strftime('%H:%M:%S')}] {message}")
 
+# --- Google API Service Helper ---
+def get_gsc_service(session: dict):
+    """Builds the GSC service object from session credentials."""
+    creds_data = session['credentials']
+    credentials = Credentials(
+        token=creds_data['token'],
+        refresh_token=creds_data['refresh_token'],
+        token_uri=creds_data['token_uri'],
+        client_id=creds_data['client_id'],
+        client_secret=creds_data['client_secret'],
+        scopes=creds_data['scopes']
+    )
+    return build('webmasters', 'v3', credentials=credentials)
+
 # --- OAuth 2.0 Flow Functions ---
 def get_oauth_flow(request: Request):
     return Flow.from_client_config(
@@ -56,11 +72,7 @@ def get_oauth_flow(request: Request):
 
 @app.get('/login')
 async def login(request: Request, flow: Flow = Depends(get_oauth_flow)):
-    authorization_url, state = flow.authorization_url(
-        access_type='offline',
-        include_granted_scopes='true',
-        prompt='consent'
-    )
+    authorization_url, state = flow.authorization_url(access_type='offline', include_granted_scopes='true', prompt='consent')
     request.session['state'] = state
     return RedirectResponse(authorization_url)
 
@@ -69,133 +81,116 @@ async def auth_callback(request: Request, flow: Flow = Depends(get_oauth_flow)):
     flow.fetch_token(authorization_response=str(request.url))
     credentials = flow.credentials
     request.session['credentials'] = {
-        'token': credentials.token,
-        'refresh_token': credentials.refresh_token,
-        'token_uri': credentials.token_uri,
-        'client_id': credentials.client_id,
-        'client_secret': credentials.client_secret,
-        'scopes': credentials.scopes
+        'token': credentials.token, 'refresh_token': credentials.refresh_token, 'token_uri': credentials.token_uri,
+        'client_id': credentials.client_id, 'client_secret': credentials.client_secret, 'scopes': credentials.scopes
     }
     async with aiohttp.ClientSession() as session:
-        async with session.get('https://www.googleapis.com/oauth2/v1/userinfo',
-                               headers={'Authorization': f'Bearer {credentials.token}'}) as resp:
+        async with session.get('https://www.googleapis.com/oauth2/v1/userinfo', headers={'Authorization': f'Bearer {credentials.token}'}) as resp:
             user_info = await resp.json()
             request.session['user'] = {'email': user_info.get('email')}
     return RedirectResponse(url=app.url_path_for('read_root'))
 
 @app.get('/logout')
 async def logout(request: Request):
-    request.session.pop('credentials', None)
-    request.session.pop('user', None)
+    request.session.clear()
     return RedirectResponse(url=app.url_path_for('read_root'))
 
-# --- API & Page Endpoints ---
+# --- Page Endpoints ---
 @app.get("/", response_class=HTMLResponse)
 async def read_root():
     with open('index.html', 'r', encoding='utf-8') as f: return HTMLResponse(content=f.read())
-
-# --- NEW: Routes for legal pages ---
 @app.get("/privacy", response_class=HTMLResponse)
 async def read_privacy():
     with open('privacy.html', 'r', encoding='utf-8') as f: return HTMLResponse(content=f.read())
-
 @app.get("/terms", response_class=HTMLResponse)
 async def read_terms():
     with open('terms.html', 'r', encoding='utf-8') as f: return HTMLResponse(content=f.read())
 
-# --- REMOVED: Tutorial route is gone ---
-
+# --- API Endpoints ---
 @app.get("/status")
 async def status(request: Request):
-    if 'user' in request.session:
-        return {"logged_in": True, "user": request.session['user']}
-    return {"logged_in": False}
-# ... (after the /status endpoint)
+    return {"logged_in": 'user' in request.session, "user": request.session.get('user')}
 
-from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
-from datetime import date, timedelta
+def handle_http_error(e: HttpError):
+    """Parses a Google API HttpError for a user-friendly message."""
+    try:
+        error_content = json.loads(e.content)
+        message = error_content.get("error", {}).get("message", "An unknown API error occurred.")
+        if e.resp.status == 403:
+            return f"Permission Denied. Check your GSC permissions. Details: {message}"
+        return f"GSC API Error (Code {e.resp.status}): {message}"
+    except (json.JSONDecodeError, AttributeError):
+        return f"An unexpected API error occurred (Status: {e.resp.status})."
 
-# ...
+# --- NEW GSC ENDPOINT: List sites user has access to ---
+@app.get("/gsc-sites")
+async def get_gsc_sites(request: Request):
+    if 'credentials' not in request.session:
+        raise HTTPException(status_code=401, detail="Authentication required.")
+    try:
+        def fetch_sites():
+            service = get_gsc_service(request.session)
+            return service.sites().list().execute()
+        
+        site_list = await asyncio.to_thread(fetch_sites)
+        return {"sites": site_list.get('siteEntry', [])}
+    except HttpError as e:
+        log(f"GSC Sites API Error: {e}")
+        raise HTTPException(status_code=e.resp.status, detail=handle_http_error(e))
+    except Exception as e:
+        log(f"An unexpected error occurred in get_gsc_sites: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
-@app.get("/status")
-async def status(request: Request):
-    if 'user' in request.session:
-        return {"logged_in": True, "user": request.session['user']}
-    return {"logged_in": False}
-
-# --- NEW: GSC API DATA ENDPOINT ---
+# --- UPDATED GSC ENDPOINT: Get performance data ---
 @app.get("/gsc-data")
 async def get_gsc_data(request: Request, site_url: str):
     if 'credentials' not in request.session:
-        return {"error": "Authentication required."}, 401
-
-    if not site_url or not site_url.startswith('http'):
-        return {"error": "A valid site URL (e.g., https://example.com) is required."}, 400
-
+        raise HTTPException(status_code=401, detail="Authentication required.")
     try:
-        creds_data = request.session['credentials']
-        credentials = Credentials(
-            token=creds_data['token'],
-            refresh_token=creds_data['refresh_token'],
-            token_uri=creds_data['token_uri'],
-            client_id=creds_data['client_id'],
-            client_secret=creds_data['client_secret'],
-            scopes=creds_data['scopes']
-        )
-        
-        # Use asyncio.to_thread to run the synchronous Google API client code
-        # in a separate thread, preventing it from blocking the server.
         def fetch_data():
-            service = build('webmasters', 'v3', credentials=credentials)
-            
-            # Define the date range (e.g., last 7 days)
+            service = get_gsc_service(request.session)
             end_date = date.today().strftime('%Y-%m-%d')
             start_date = (date.today() - timedelta(days=7)).strftime('%Y-%m-%d')
-            
-            # API request body
-            api_request = {
-                'startDate': start_date,
-                'endDate': end_date,
-                'dimensions': ['page'],
-                'rowLimit': 25 # Get top 25 pages
-            }
-            
-            response = service.searchanalytics().query(siteUrl=site_url, body=api_request).execute()
-            return response.get('rows', [])
+            api_request = {'startDate': start_date, 'endDate': end_date, 'dimensions': ['page'], 'rowLimit': 25}
+            return service.searchanalytics().query(siteUrl=site_url, body=api_request).execute()
 
-        gsc_data = await asyncio.to_thread(fetch_data)
-        
-        # Format the data for the frontend
-        formatted_data = []
-        for row in gsc_data:
-            formatted_data.append({
-                "page": row['keys'][0],
-                "clicks": row['clicks'],
-                "impressions": row['impressions'],
-                "ctr": f"{row['ctr'] * 100:.2f}%",
-                "position": f"{row['position']:.2f}"
-            })
-        
+        gsc_data_raw = await asyncio.to_thread(fetch_data)
+        rows = gsc_data_raw.get('rows', [])
+        formatted_data = [{
+            "page": row['keys'][0], "clicks": row['clicks'], "impressions": row['impressions'],
+            "ctr": f"{row['ctr'] * 100:.2f}%", "position": f"{row['position']:.2f}"
+        } for row in rows]
         return {"data": formatted_data}
-
     except HttpError as e:
-        error_content = json.loads(e.content)
-        error_message = error_content.get("error", {}).get("message", "An unknown API error occurred.")
-        log(f"GSC API Error: {error_message}")
-        # Provide a user-friendly error message
-        if e.resp.status == 403:
-            return {"error": f"Permission Denied. Make sure you have access to '{site_url}' in Google Search Console and have granted this app permission."}, 403
-        return {"error": f"GSC API Error: {error_message}"}, e.resp.status
+        log(f"GSC Data API Error: {e}")
+        raise HTTPException(status_code=e.resp.status, detail=handle_http_error(e))
     except Exception as e:
         log(f"An unexpected error occurred in get_gsc_data: {e}")
-        return {"error": "An internal server error occurred."}, 500
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
-# --- URL Processing Logic (Unchanged) ---
-# ... (rest of the file remains the same)
+# --- NEW GSC ENDPOINT: Inspect a URL ---
+@app.get("/inspect-url")
+async def inspect_url(request: Request, site_url: str, inspection_url: str):
+    if 'credentials' not in request.session:
+        raise HTTPException(status_code=401, detail="Authentication required.")
+    try:
+        def do_inspection():
+            service = get_gsc_service(request.session)
+            body = {'inspectionUrl': inspection_url, 'siteUrl': site_url}
+            return service.urlInspection().index().inspect(body=body).execute()
 
-# --- URL Processing Logic (Unchanged) ---
-# ... (The process_url_task and parse_urls_from_payload functions are perfect as they are, no changes needed) ...
+        inspection_result = await asyncio.to_thread(do_inspection)
+        status = inspection_result.get('inspectionResult', {}).get('indexStatusResult', {})
+        return {"status": status}
+    except HttpError as e:
+        log(f"URL Inspection API Error: {e}")
+        raise HTTPException(status_code=e.resp.status, detail=handle_http_error(e))
+    except Exception as e:
+        log(f"An unexpected error occurred in inspect_url: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
+
+
+# --- Indexing API WebSocket Logic (Mostly Unchanged) ---
 async def process_url_task(session, access_token, url, semaphore):
     async with semaphore:
         log(f"  > Submitting URL: {url}")
@@ -207,9 +202,8 @@ async def process_url_task(session, access_token, url, semaphore):
                 response_json = await response.json()
                 if response.status >= 400:
                     error_message = response_json.get("error", {}).get("message", "Unknown API error")
-                    return {"type": "result", "status": "error", "url": url, "message": f"API Error (Code {response.status}): {error_message}"}
-                else:
-                    return {"type": "result", "status": "success", "url": url, "message": "Notification received."}
+                    return {"type": "result", "status": "error", "url": url, "message": f"API Error ({response.status}): {error_message}"}
+                return {"type": "result", "status": "success", "url": url, "message": "Notification received."}
         except asyncio.TimeoutError:
             return {"type": "result", "status": "error", "url": url, "message": f"Request Timed Out ({REQUEST_TIMEOUT_SECONDS}s)"}
         except aiohttp.ClientError as e:
@@ -228,47 +222,36 @@ async def parse_urls_from_payload(file_payload):
     except Exception as e:
         log(f"  ! Error parsing file content: {e}")
         return []
-    valid_urls = [url.strip() for url in urls if url.strip().startswith('http')]
-    return valid_urls
+    return [url.strip() for url in urls if url.strip().startswith('http')]
 
-# --- WebSocket Endpoint (Unchanged) ---
-# ... (The websocket_endpoint function is perfect as it is, no changes needed) ...
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     if 'credentials' not in websocket.session:
         await websocket.send_json({"type": "critical_error", "message": "Authentication failed. Please log in again."})
-        await websocket.close(code=1008)
-        return
+        await websocket.close(code=1008); return
     try:
         initial_data = json.loads(await websocket.receive_text())
         creds_data = websocket.session['credentials']
-        credentials = Credentials(
-            token=creds_data['token'],
-            refresh_token=creds_data['refresh_token'],
-            token_uri=creds_data['token_uri'],
-            client_id=creds_data['client_id'],
-            client_secret=creds_data['client_secret'],
-            scopes=creds_data['scopes']
-        )
+        credentials = Credentials(**creds_data)
         if credentials.expired and credentials.refresh_token:
             from google.auth.transport.requests import Request as GRequest
             credentials.refresh(GRequest())
             websocket.session['credentials']['token'] = credentials.token
-        access_token = credentials.token
+        
         urls_to_process = []
         if initial_data.get('urls_file'):
             urls_to_process = await parse_urls_from_payload(initial_data['urls_file'])
         elif initial_data.get('urls_text'):
             urls_to_process = [u.strip() for u in initial_data['urls_text'].split('\n') if u.strip().startswith('http')]
-        if not urls_to_process:
-            raise ValueError("No valid URLs were found.")
+        
+        if not urls_to_process: raise ValueError("No valid URLs were found for indexing.")
+
         semaphore = asyncio.Semaphore(CONCURRENT_REQUEST_LIMIT)
         async with aiohttp.ClientSession() as session:
-            tasks = [process_url_task(session, access_token, url, semaphore) for url in urls_to_process]
+            tasks = [process_url_task(session, credentials.token, url, semaphore) for url in urls_to_process]
             for future in asyncio.as_completed(tasks):
-                result = await future
-                await websocket.send_json(result)
+                await websocket.send_json(await future)
         await websocket.send_json({"type": "done", "message": "All URLs processed."})
     except WebSocketDisconnect:
         log("WebSocket connection closed by client.")
@@ -276,5 +259,4 @@ async def websocket_endpoint(websocket: WebSocket):
         log(f"An error occurred in WebSocket: {e}")
         await websocket.send_json({"type": "critical_error", "message": str(e)})
     finally:
-        if not websocket.client_state == 'DISCONNECTED':
-            await websocket.close()
+        if not websocket.client_state == 'DISCONNECTED': await websocket.close()
